@@ -166,3 +166,28 @@ def test_default_scale_uses_logical_dpi(qapp: QApplication) -> None:
     screen = qapp.primaryScreen()
     theme = Theme(qapp, appearance="light")
     assert theme.scale == pytest.approx(screen.logicalDotsPerInch() / 96)
+
+
+def _contrast(a: str, b: str) -> float:
+    def lum(h: str) -> float:
+        c = [int(h[i : i + 2], 16) / 255 for i in (1, 3, 5)]
+        c = [x / 12.92 if x <= 0.03928 else ((x + 0.055) / 1.055) ** 2.4 for x in c]
+        return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+
+    hi, lo = sorted([lum(a), lum(b)], reverse=True)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+@pytest.mark.parametrize("mode", ["light", "dark"])
+def test_shell_text_pairs_meet_contrast_floor(mode: str) -> None:
+    c = TOKENS["color"][mode]
+    pairs = [("ink", "bg"), ("ink", "surface"), ("muted", "bg"), ("muted", "surface"),
+             ("ink", "primary_soft"), ("primary_ink", "primary")]  # fmt: skip
+    for fg, bg in pairs:
+        assert _contrast(c[fg], c[bg]) >= 4.5, (mode, fg, bg)
+
+
+def test_paused_footer_text_is_not_amber(tmp_path: Path) -> None:
+    qss = render_qss(load_tokens(), "light", 1.0, tmp_path)
+    rule = next(line for line in qss.splitlines() if 'RailFooter[state="paused"]' in line)
+    assert TOKENS["color"]["light"]["amber"] not in rule
