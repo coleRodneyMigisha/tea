@@ -33,6 +33,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.command == "packet":
+        from tea.cli import run_packet
+
+        return run_packet(args)
+    if args.command == "import-reply":
+        from tea.cli import run_import
+
+        return run_import(args)
     name = args.command or ("background" if args.background else "app")
     print(f"{name}: not implemented yet")
     return 0

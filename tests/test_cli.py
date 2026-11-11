@@ -33,8 +33,10 @@ def test_unknown_command_exits_nonzero() -> None:
 
 
 def test_packet_accepts_week_and_kind() -> None:
+    # An empty database has no blog for that week: a clean error, not a usage error.
     result = _run("packet", "--week", "2026-11-09", "--kind", "weekly_pick")
-    assert result.returncode == 0
+    assert result.returncode == 1
+    assert "Traceback" not in result.stderr
 
 
 def test_packet_rejects_bad_kind() -> None:
