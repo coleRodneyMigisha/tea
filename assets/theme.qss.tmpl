@@ -8,6 +8,7 @@ QWidget#Surface, QFrame#Panel { background: {{surface}}; border: 1px solid {{lin
 QLabel { background: transparent; }
 QLabel[role="muted"] { color: {{muted}}; }
 QLabel[role="caption"] { color: {{muted}}; font-size: {{px_caption}}px; }
+QLabel[role="strong"] { font-weight: 600; }
 QLabel[role="title"] { font-size: {{px_title_m}}px; font-weight: 600; }
 QLabel[role="display"] { font-family: {{font_reading}}; font-size: {{px_display}}px; font-weight: 500; }
 
@@ -80,6 +81,7 @@ QLabel#Chip[state="posted"]  { background: transparent; color: {{muted}}; }
 QLabel#Chip[state="failed"]  { background: {{attention_soft}}; color: {{attention}}; border-color: {{attention_soft}}; }
 QLabel#Chip[state="carried"]  { background: {{primary_soft}}; color: {{ink}}; border-color: {{primary_soft}}; }
 QLabel#Chip[state="prompt"]   { background: {{amber_soft}}; color: {{amber}}; border-color: {{amber_soft}}; }
+QLabel#Chip[state="pick"]     { background: {{primary_soft}}; color: {{ink}}; border-color: {{primary_soft}}; }
 QLabel#Chip[state="shelved"]  { background: transparent; color: {{muted}}; border-style: dashed; }
 
 /* Floating question popup */
@@ -87,6 +89,7 @@ QWidget#PopupCard { background: {{surface_raised}}; border: 1px solid {{line}}; 
 QLabel#PopupQuestion { font-family: {{font_reading}}; font-size: 22px; font-weight: 500; }
 QLabel#PopupProgress { color: {{muted}}; font-size: {{px_caption}}px; }
 QWidget#PopupHeader { background: transparent; }
+QPlainTextEdit#FocusEditor { font-family: {{font_reading}}; font-size: {{px_title_s}}px; }
 QLabel#DialogTitle { font-family: {{font_reading}}; font-size: 22px; font-weight: 500; }
 QRadioButton[row="true"] { padding: 8px 10px; border: 1px solid {{line}}; border-radius: {{r_control}}px; background: {{surface_raised}}; }
 QRadioButton[row="true"]:hover { background: {{primary_soft}}; }

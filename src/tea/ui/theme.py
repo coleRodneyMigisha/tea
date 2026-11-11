@@ -40,7 +40,12 @@ _EXTRA_PX = {
     "popup_shadow_y": 8,
     # Answers preview dialog: the same width as the focus dialog.
     "dialog_width": 520,
+    # Steep ring (UI_DESIGN 3.1): 240 x 240, 14 px track and arc.
+    "ring": 240,
+    "ring_stroke": 14,
 }
+# Type sizes UI_DESIGN names that the token type scale lacks: the ring's centre text.
+_EXTRA_TYPE_PX = {"ring_centre": 28}
 _RGBA = re.compile(r"rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)")
 # Icons referenced from the QSS template, and the color role each is drawn in.
 _QSS_ICON_ROLES = {"check-on-primary": "primary_ink"}
@@ -291,7 +296,8 @@ class Theme(QObject):
         return self.px(self.tokens["spacing_px"][step])
 
     def type_px(self, name: str) -> int:
-        return self.px(self.tokens["type_scale_px"][name])
+        scale = self.tokens["type_scale_px"]
+        return self.px(scale[name] if name in scale else _EXTRA_TYPE_PX[name])
 
     def icon_size(self) -> QSize:
         side = self.size("icon")

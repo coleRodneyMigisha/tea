@@ -23,7 +23,7 @@ from zoneinfo import ZoneInfo
 
 from tea.clock import Clock, FakeClock
 from tea.db.repos import Repos
-from tea.devtools import snap_widgets
+from tea.devtools import snap_week, snap_widgets
 
 SNAP_TIME = datetime(2026, 11, 11, 10, 0, tzinfo=ZoneInfo("Africa/Kampala"))  # a Wednesday
 THEMES = ("light", "dark")
@@ -41,6 +41,7 @@ class State:
     seed: Seed | None = None
     settings: dict[str, object] = field(default_factory=dict)
     build: Build | None = None
+    keep_focus: bool = False  # show the focus ring of whatever has focus
 
 
 REGISTRY: dict[str, dict[str, State]] = {}
@@ -54,6 +55,7 @@ for _screen in ("this_week", "new_blog", "drafts", "settings"):
     register(_screen, "empty", State(_screen))
 register("this_week", "paused", State("this_week", settings={"pause_automation": True}))
 snap_widgets.register_all(register, State)
+snap_week.register_all(register, State)  # replaces the M3 this_week empty and paused states
 
 
 def _isolate() -> tempfile.TemporaryDirectory[str]:
@@ -104,7 +106,7 @@ def render(screen: str, state: str, theme_name: str, scale: float, out: Path) ->
         for _ in range(3):
             app.processEvents()
         focused = app.focusWidget()
-        if focused is not None:
+        if focused is not None and not spec.keep_focus:
             focused.clearFocus()  # at-rest look; focus rings get their own states later
         app.processEvents()
         image = snap_widgets.grab_on_background(window, theme)
