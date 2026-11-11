@@ -136,7 +136,15 @@ def test_scale_answer_shows_its_labels(repos: Repos) -> None:
         "How formal?", "scale", "voice", "bank", options=["Casual", "Formal"], bank_key="s"
     )
     repos.answers.add(q.id, "login", "2")
-    assert "A: 2 (on a scale from Casual to Formal)" in _section(repos)
+    assert "A: 2 of 5 (1 = Casual, 5 = Formal)" in _section(repos)
+
+
+def test_non_numeric_scale_answer_is_left_as_typed(repos: Repos) -> None:
+    q = repos.questions.create(
+        "How formal?", "scale", "voice", "bank", options=["Casual", "Formal"], bank_key="s"
+    )
+    repos.answers.add(q.id, "login", "fairly casual")
+    assert "A: fairly casual\n" in _section(repos) + "\n"
 
 
 def test_multiline_answer_stays_on_one_line(repos: Repos) -> None:

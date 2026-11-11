@@ -32,6 +32,7 @@ LABELS = {
     "improve": "About the previous draft",
 }
 _SPACE = re.compile(r"\s+")
+SCALE_POINTS = ("1", "2", "3", "4", "5")  # a scale answer is stored as one of these
 
 
 @dataclass(frozen=True)
@@ -48,8 +49,9 @@ class Item:
     def line(self) -> str:
         text = _SPACE.sub(" ", self.answer.answer_text).strip()
         q = self.question
-        if q.kind == "scale" and len(q.options) == 2:
-            text += f" (on a scale from {q.options[0]} to {q.options[1]})"
+        if q.kind == "scale" and len(q.options) == 2 and text in SCALE_POINTS:
+            low, high = q.options
+            text = f"{text} of {SCALE_POINTS[-1]} (1 = {low}, {SCALE_POINTS[-1]} = {high})"
         return f"Q: {_SPACE.sub(' ', q.text).strip()} / A: {text}"
 
 
