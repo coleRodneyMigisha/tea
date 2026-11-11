@@ -73,6 +73,53 @@ AUTO_TOPIC_NOTE = "Topic picked by tea. No answers were given for this focus."
 CARRIED_OVER = "Carried over from last week. An improvement prompt is prepared on Friday."
 SHELVED = "Shelved. tea won't prepare anything for this draft unless you revive it."
 
+# This week (UI_DESIGN 3.1)
+SET_FOCUS = "Set focus"
+SET_OWN_TOPIC = "Set my own topic"
+EDIT_FOCUS = "Edit focus"
+OPEN_HANDOFF = "Open hand-off"
+OPEN_DRAFT = "Open draft"
+CHIP_PICK = "Claude will pick the topic"
+PICK_SOON = "tea will ask Claude to pick a topic at {time}"
+RING_NO_FOCUS = "No focus yet"
+RING_PROMPT_READY = "Prompt ready"
+RING_READY = "Draft ready"
+RING_PAUSED = "Paused"
+RING_UNTIL = "until your prompt"
+RING_SENTENCE = "Prompt due {day} {time}, {left} left"
+RING_SENTENCE_NO_FOCUS = "No focus yet. Prompt due {day} {time}"
+RING_SENTENCE_PICK = "Claude will pick the topic. Prompt due {day} {time}, {left} left"
+RING_SENTENCE_COPIED = "Prompt ready. Waiting for Claude's reply"
+DAYS = ("{n} day", "{n} days")
+HOURS = ("{n} hour", "{n} hours")
+MINUTES = "{n} min"
+QUESTIONS_THIS_WEEK = "Questions this week"
+ANSWERED = "{n} answered"
+ANSWER_FEW = "Answer a few questions"
+WHAT_CLAUDE_TOLD = "What Claude will be told"
+
+# Focus dialog (UI_DESIGN 4)
+FOCUS_TITLE = "What's the focus this week?"
+FOCUS_HINT = "If you don't set one, tea asks Claude to pick a trending topic on Friday."
+FOCUS_CARRIED = "Last week's draft is kept and improved with this week's answers."
+FOCUS_SAVE = "Set focus"
+FOCUS_LATER = "Not now"
+
+# Notifications (UI_DESIGN 5)
+NOTIFY_PROMPT_READY = "Your draft prompt is ready"
+NOTIFY_TWO_READY = "Two prompts are ready"
+NOTIFY_REMINDER = "Still waiting for Claude's reply"
+NOTIFY_FOCUS = "What's the focus this week?"
+NOTIFY_FOCUS_BODY = "Set it and tea prepares your prompt for Friday."
+NOTIFY_PICK = "No focus yet"
+NOTIFY_PICK_BODY = "Friday's prompt will ask Claude to pick a trending topic."
+NOTIFY_NO_FOCUS = "No focus set"
+NOTIFY_NO_FOCUS_BODY = "Nothing was prepared this week."
+NOTIFY_IMPROVE_READY = "Improvement prompt ready"
+NOTIFY_OPEN_HANDOFF = "Open hand-off"
+NOTIFY_SET_FOCUS = "Set focus"
+NOTIFY_SET_OWN_TOPIC = "Set my own topic"
+
 # Question popup (UI_DESIGN 4)
 POPUP_PROGRESS = "Question {n} of {m}"
 POPUP_NEXT = "Next"
@@ -103,6 +150,7 @@ DOCTOR_TRAY_MISSING = "Tray: not available. Open tea from the launcher instead."
 
 # Dates and times
 WEEKDAY_SHORT = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+WEEKDAY_LONG = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
 AM = "am"
 PM = "pm"
 DOCTOR_FONT_SYSTEM = "installed on the system"

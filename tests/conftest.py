@@ -25,6 +25,14 @@ def tmp_dirs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     return tmp_path
 
 
+@pytest.fixture(autouse=True)
+def no_desktop_notifications(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tests never reach the owner's real notification server."""
+    from tea import notify
+
+    monkeypatch.setattr(notify.DBusBackend, "create", classmethod(lambda cls, parent=None: None))
+
+
 @pytest.fixture
 def clock() -> FakeClock:
     return FakeClock(datetime(2026, 11, 13, 17, 59, tzinfo=KAMPALA))

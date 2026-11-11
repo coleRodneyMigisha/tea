@@ -285,6 +285,27 @@ class AttachmentRepo(Repo):
         self.conn.execute("DELETE FROM attachments WHERE id = ?", (attachment_id,))
 
 
+class MetaRepo(Repo):
+    """Small key/value flags, for example the scheduler's `rollover_done_<week>` guards."""
+
+    def get(self, key: str) -> str | None:
+        row = self.conn.execute("SELECT value FROM meta WHERE key = ?", (key,)).fetchone()
+        return None if row is None else str(row[0])
+
+    def set(self, key: str, value: str) -> None:
+        self.conn.execute(
+            "INSERT INTO meta (key, value) VALUES (?, ?)"
+            " ON CONFLICT (key) DO UPDATE SET value = excluded.value",
+            (key, value),
+        )
+
+    def keys(self, prefix: str) -> list[str]:
+        rows = self.conn.execute(
+            "SELECT key FROM meta WHERE substr(key, 1, ?) = ? ORDER BY key", (len(prefix), prefix)
+        ).fetchall()
+        return [str(r[0]) for r in rows]
+
+
 class Repos:
     """All repositories over one connection. Workers build their own with `connect()`."""
 
@@ -298,6 +319,7 @@ class Repos:
         self.drafts = DraftRepo(conn, clock)
         self.handoffs = HandoffRepo(conn, clock)
         self.jobs = JobRepo(conn, clock)
+        self.meta = MetaRepo(conn, clock)
 
     def transaction(self) -> AbstractContextManager[None]:
         return transaction(self.conn)
@@ -310,6 +332,7 @@ __all__ = [
     "DraftRepo",
     "HandoffRepo",
     "JobRepo",
+    "MetaRepo",
     "QuestionRepo",
     "Repos",
     "WeekRepo",
