@@ -1,7 +1,9 @@
 """TeaApp wiring: tray or no tray, --background, IPC show, pause sync, quit."""
 
 from collections.abc import Iterator
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pytest
 from PySide6.QtWidgets import QApplication
@@ -9,7 +11,9 @@ from pytestqt.qtbot import QtBot
 
 from tea import settings as settings_mod
 from tea.app import MSG_QUESTIONS, TeaApp
+from tea.clock import FakeClock
 from tea.single_instance import SingleInstance
+from tea.ui.widgets.focus_dialog import FocusDialog
 from tea.ui.widgets.question_popup import QuestionPopup
 
 
@@ -26,13 +30,29 @@ def restore_quit_flag(qapp: QApplication) -> Iterator[None]:
     yield
     qapp.setQuitOnLastWindowClosed(True)
     for widget in qapp.topLevelWidgets():
-        if isinstance(widget, QuestionPopup):
+        if isinstance(widget, QuestionPopup | FocusDialog):
             widget.close()
             widget.deleteLater()
 
 
+# A Monday before the focus time: the first scheduler pass shows only the login questions.
+START = datetime(2026, 11, 9, 8, 0, tzinfo=ZoneInfo("Africa/Kampala"))
+
+
+_MADE: list[TeaApp] = []
+
+
+@pytest.fixture(autouse=True)
+def stop_schedulers() -> Iterator[None]:
+    """A live 60-second timer would refresh a deleted window during a later test."""
+    yield
+    while _MADE:
+        _MADE.pop().runner.stop()
+
+
 def _make(qapp: QApplication, qtbot: QtBot, instance: SingleInstance, tray: bool) -> TeaApp:
-    tea = TeaApp(qapp, instance, tray_available=tray)
+    tea = TeaApp(qapp, instance, tray_available=tray, clock=FakeClock(START))
+    _MADE.append(tea)
     qtbot.addWidget(tea.window)
     return tea
 

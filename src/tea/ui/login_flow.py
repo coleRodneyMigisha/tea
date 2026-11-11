@@ -56,6 +56,8 @@ class LoginFlow(QObject):
         if self._started:
             return False
         self._started = True
+        if self.popup is not None:  # `tea login-questions` already opened the manual session
+            return False
         settings = self._settings()
         now = self.clock.now()
         if settings.questions_per_login <= 0 or not qs.login_allowed(self.repos, now):
