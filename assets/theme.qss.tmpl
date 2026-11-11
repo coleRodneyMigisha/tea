@@ -1,0 +1,90 @@
+/* Rendered by tea/ui/theme.py. Replace {{token}} with values from design-tokens.json for the active mode.
+   Qt style sheets have no variables, so render this file once per mode and apply with QApplication.setStyleSheet().
+   Widgets are targeted by objectName or by dynamic properties (variant, state). Do not hard-code colors elsewhere. */
+
+* { font-family: {{font_ui}}; font-size: {{px_body}}px; color: {{ink}}; }
+QMainWindow, QDialog { background: {{bg}}; }
+QWidget#Surface, QFrame#Panel { background: {{surface}}; border: 1px solid {{line}}; border-radius: {{r_panel}}px; }
+QLabel { background: transparent; }
+QLabel[role="muted"] { color: {{muted}}; }
+QLabel[role="caption"] { color: {{muted}}; font-size: {{px_caption}}px; }
+QLabel[role="title"] { font-size: {{px_title_m}}px; font-weight: 600; }
+QLabel[role="display"] { font-family: {{font_reading}}; font-size: {{px_display}}px; font-weight: 500; }
+
+/* Navigation rail */
+QWidget#Rail { background: {{surface}}; border-right: 1px solid {{line}}; }
+QLabel#Wordmark { font-family: {{font_reading}}; font-size: 24px; font-weight: 600; }
+QPushButton[nav="true"] { text-align: left; padding: 9px 14px; border: none; border-radius: {{r_control}}px; background: transparent; color: {{muted}}; font-weight: 500; }
+QPushButton[nav="true"]:hover { background: {{primary_soft}}; color: {{ink}}; }
+QPushButton[nav="true"]:checked { background: {{primary_soft}}; color: {{ink}}; font-weight: 600; }
+
+/* Buttons */
+QPushButton { padding: 8px 16px; border-radius: {{r_control}}px; border: 1px solid {{line}}; background: {{surface_raised}}; font-weight: 500; }
+QPushButton:hover { border-color: {{primary}}; }
+QPushButton:focus { border: 2px solid {{focus_ring}}; padding: 7px 15px; }
+QPushButton:disabled { color: {{muted}}; background: {{bg}}; border-color: {{line}}; }
+QPushButton[variant="primary"] { background: {{primary}}; color: {{primary_ink}}; border: 1px solid {{primary}}; font-weight: 600; }
+QPushButton[variant="primary"]:hover { background: {{primary_hover}}; border-color: {{primary_hover}}; }
+QPushButton[variant="primary"]:disabled { background: {{line}}; color: {{muted}}; border-color: {{line}}; }
+QPushButton[variant="quiet"] { background: transparent; border: none; color: {{muted}}; }
+QPushButton[variant="quiet"]:hover { color: {{ink}}; background: {{primary_soft}}; }
+QPushButton[variant="danger"] { color: {{attention}}; border-color: {{attention}}; background: transparent; }
+
+/* Inputs */
+QLineEdit, QPlainTextEdit, QTextEdit, QComboBox, QSpinBox, QTimeEdit {
+  background: {{surface_raised}}; border: 1px solid {{line}}; border-radius: {{r_control}}px; padding: 8px 10px;
+  selection-background-color: {{primary_soft}}; selection-color: {{ink}};
+}
+QLineEdit:focus, QPlainTextEdit:focus, QTextEdit:focus, QComboBox:focus, QSpinBox:focus, QTimeEdit:focus { border: 2px solid {{focus_ring}}; padding: 7px 9px; }
+QPlainTextEdit[reading="true"], QTextEdit[reading="true"] { font-family: {{font_reading}}; font-size: {{px_reading_body}}px; padding: 16px 18px; }
+QComboBox::drop-down { border: none; width: 24px; }
+QComboBox QAbstractItemView { background: {{surface_raised}}; border: 1px solid {{line}}; selection-background-color: {{primary_soft}}; selection-color: {{ink}}; }
+
+/* Checkbox and radio */
+QCheckBox, QRadioButton { spacing: 8px; background: transparent; }
+QCheckBox::indicator { width: 18px; height: 18px; border: 1.5px solid {{muted}}; border-radius: 5px; background: {{surface_raised}}; }
+QCheckBox::indicator:checked { background: {{primary}}; border-color: {{primary}}; image: url(:/icons/check-on-primary.svg); }
+QCheckBox::indicator:focus { border: 2px solid {{focus_ring}}; }
+
+/* Scale (1 to 5) segmented control: five checkable QPushButtons with property seg="true" */
+QPushButton[seg="true"] { min-width: 44px; padding: 8px 0; border-radius: 0; border: 1px solid {{line}}; background: {{surface_raised}}; }
+QPushButton[seg="true"]:checked { background: {{primary}}; color: {{primary_ink}}; border-color: {{primary}}; }
+QPushButton[seg="first"] { border-top-left-radius: {{r_control}}px; border-bottom-left-radius: {{r_control}}px; }
+QPushButton[seg="last"]  { border-top-right-radius: {{r_control}}px; border-bottom-right-radius: {{r_control}}px; }
+
+/* Lists (drafts) */
+QListView, QListWidget { background: transparent; border: none; outline: none; }
+QListView::item { padding: 12px 14px; border-radius: {{r_control}}px; margin: 2px 6px; }
+QListView::item:hover { background: {{primary_soft}}; }
+QListView::item:selected { background: {{primary_soft}}; color: {{ink}}; border-left: 3px solid {{primary}}; }
+
+/* Status chips: QLabel#Chip with property state = scoping | prompt | ready | carried | posted | shelved */
+QLabel#Chip { border-radius: 999px; padding: 2px 10px; font-size: {{px_caption}}px; font-weight: 600; border: 1px solid {{line}}; color: {{muted}}; background: transparent; }
+QLabel#Chip[state="scoping"] { background: {{amber_soft}}; color: {{amber}}; border-color: {{amber_soft}}; }
+QLabel#Chip[state="ready"]   { background: {{primary}}; color: {{primary_ink}}; border-color: {{primary}}; }
+QLabel#Chip[state="posted"]  { background: transparent; color: {{muted}}; }
+QLabel#Chip[state="failed"]  { background: {{attention_soft}}; color: {{attention}}; border-color: {{attention_soft}}; }
+QLabel#Chip[state="carried"]  { background: {{primary_soft}}; color: {{ink}}; border-color: {{primary_soft}}; }
+QLabel#Chip[state="prompt"]   { background: {{amber_soft}}; color: {{amber}}; border-color: {{amber_soft}}; }
+QLabel#Chip[state="shelved"]  { background: transparent; color: {{muted}}; border-style: dashed; }
+
+/* Floating question popup */
+QWidget#PopupCard { background: {{surface_raised}}; border: 1px solid {{line}}; border-radius: {{r_popup}}px; }
+QLabel#PopupQuestion { font-family: {{font_reading}}; font-size: 22px; font-weight: 500; }
+QLabel#PopupProgress { color: {{muted}}; font-size: {{px_caption}}px; }
+
+/* Verification panel */
+QLabel[verdict="supported"]   { color: {{primary}}; font-weight: 600; }
+QLabel[verdict="weak"]        { color: {{amber}}; font-weight: 600; }
+QLabel[verdict="unsupported"] { color: {{attention}}; font-weight: 600; }
+
+/* Scrollbars */
+QScrollBar:vertical { width: 10px; background: transparent; margin: 2px; }
+QScrollBar::handle:vertical { background: {{line}}; border-radius: 5px; min-height: 32px; }
+QScrollBar::handle:vertical:hover { background: {{muted}}; }
+QScrollBar::add-line, QScrollBar::sub-line { height: 0; width: 0; }
+QScrollBar:horizontal { height: 10px; background: transparent; margin: 2px; }
+QScrollBar::handle:horizontal { background: {{line}}; border-radius: 5px; min-width: 32px; }
+
+QToolTip { background: {{ink}}; color: {{bg}}; border: none; padding: 6px 8px; border-radius: 6px; }
+QFrame[divider="true"] { background: {{line}}; max-height: 1px; min-height: 1px; border: none; }

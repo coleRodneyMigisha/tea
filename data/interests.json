@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "note": "Starter interests used to pick a trending topic on Thursday when no focus is set. Edit in Settings. 'region' is optional and biases the search toward local relevance.",
+  "interests": [
+    "artificial intelligence and machine learning",
+    "computer vision",
+    "software engineering and web development",
+    "networking and systems",
+    "technology and innovation in Uganda and East Africa"
+  ],
+  "region": "Uganda"
+}

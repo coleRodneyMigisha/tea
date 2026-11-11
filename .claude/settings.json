@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make:*)",
+      "Bash(pytest:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(python -m tea:*)",
+      "Bash(python -m tea.devtools.snap:*)",
+      "Bash(ruff:*)",
+      "Bash(mypy:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)"
+    ],
+    "deny": [
+      "Read(**/.env)",
+      "Read(~/.config/tea/.env)",
+      "Bash(git push:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(rm -rf:*)",
+      "Bash(sudo:*)"
+    ]
+  }
+}

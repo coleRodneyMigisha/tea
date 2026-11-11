@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "note": "Manual-mode scope questions. Selection: take all templates whose 'applies' condition holds, in 'order' ascending, until 15; if fewer than 5 apply, add the lowest-order unused 'always' templates. {topic} is replaced with the blog's topic. applies: always | scope_empty | audience_empty | has_files | web | academic | long | short.",
+  "templates": [
+    {"key":"s-reader","order":10,"applies":"always","category":"scope","kind":"text","text":"Who is the one reader you are writing \"{topic}\" for, and what should they understand or do afterwards?","options":[]},
+    {"key":"s-position","order":20,"applies":"always","category":"scope","kind":"text","text":"What is your own position or angle on \"{topic}\"?","options":[]},
+    {"key":"s-example","order":30,"applies":"always","category":"scope","kind":"text","text":"What is one real example, story or experience of yours that shows the point?","options":[]},
+    {"key":"s-takeaway","order":40,"applies":"always","category":"scope","kind":"text","text":"If a reader remembers only one sentence from this post, what should it be?","options":[]},
+    {"key":"s-leave-out","order":50,"applies":"always","category":"scope","kind":"text","text":"What should this post leave out?","options":[]},
+    {"key":"s-tone","order":60,"applies":"always","category":"scope","kind":"scale","text":"What tone should this post have?","options":["Casual and personal","Formal and analytical"]},
+    {"key":"s-cta","order":70,"applies":"always","category":"scope","kind":"choice","text":"How should the post end?","options":["Stop when the point is made","A question to the reader","A clear call to action","A short summary"]},
+    {"key":"s-audience","order":15,"applies":"audience_empty","category":"scope","kind":"text","text":"You didn't say who this is for. Who will read it, and what do they already know?","options":[]},
+    {"key":"s-cover","order":16,"applies":"scope_empty","category":"scope","kind":"text","text":"What exactly should the post cover, and what are the two or three points it must make?","options":[]},
+    {"key":"s-files-parts","order":80,"applies":"has_files","category":"scope","kind":"text","text":"Which parts of your attached documents matter most for this post?","options":[]},
+    {"key":"s-files-avoid","order":85,"applies":"has_files","category":"scope","kind":"text","text":"Is anything in your attached documents confidential, unfinished or not for publication?","options":[]},
+    {"key":"s-web-sources","order":90,"applies":"web","category":"scope","kind":"text","text":"Are there websites, publications or people Claude should look at, or avoid, when researching this?","options":[]},
+    {"key":"s-web-recency","order":95,"applies":"web","category":"scope","kind":"choice","text":"How recent should the evidence be?","options":["Last few months","Last few years","Doesn't matter"]},
+    {"key":"s-academic","order":100,"applies":"academic","category":"scope","kind":"text","text":"Are there particular papers, authors or fields the post should draw on?","options":[]},
+    {"key":"s-evidence-weight","order":105,"applies":"academic","category":"scope","kind":"scale","text":"How much should the post lean on published research versus your own experience?","options":["Mostly my experience","Mostly published research"]},
+    {"key":"s-long-depth","order":110,"applies":"long","category":"scope","kind":"text","text":"This is a long post. Which two or three sections deserve the most depth?","options":[]},
+    {"key":"s-long-structure","order":115,"applies":"long","category":"scope","kind":"choice","text":"How should a long post be organized?","options":["Step by step","Problem, then solution","Several separate ideas","Let Claude decide"]},
+    {"key":"s-short-focus","order":120,"applies":"short","category":"scope","kind":"text","text":"This is a short post. What single idea should it focus on?","options":[]}
+  ]
+}

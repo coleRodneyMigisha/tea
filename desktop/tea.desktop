@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=tea
+Comment=Draft weekly blog posts for Medium
+Exec=__TEA_BIN__
+Icon=tea
+Terminal=false
+Categories=Office;Utility;
+StartupWMClass=tea

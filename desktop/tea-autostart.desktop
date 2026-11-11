@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=tea (background)
+Comment=Runs tea's weekly schedule and login questions
+Exec=__TEA_BIN__ --background
+Icon=tea
+Terminal=false
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=8
+NoDisplay=true

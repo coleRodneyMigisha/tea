@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "note": "Questions added for a carried-over draft. {title} is replaced with the draft's title.",
+  "templates": [
+    {"key":"i-least-you","category":"improve","kind":"text","text":"Which part of the draft \"{title}\" sounds least like you, and how would you say it instead?","options":[]},
+    {"key":"i-example","category":"improve","kind":"text","text":"What real example from your own work or life would make \"{title}\" more convincing?","options":[]},
+    {"key":"i-missing","category":"improve","kind":"text","text":"What would a reader of \"{title}\" expect to find that isn't there yet?","options":[]},
+    {"key":"i-disagree","category":"improve","kind":"text","text":"Is there anything in \"{title}\" you disagree with or wouldn't say?","options":[]},
+    {"key":"i-cut","category":"improve","kind":"text","text":"What is one sentence or section of \"{title}\" you would cut?","options":[]},
+    {"key":"i-reader","category":"improve","kind":"text","text":"Who exactly should read \"{title}\", and does the draft speak to them?","options":[]}
+  ]
+}

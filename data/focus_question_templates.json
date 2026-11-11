@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "note": "Questions added when a weekly focus exists. {focus} is replaced with the focus text. kind: text | choice | scale. All category values must be valid question categories.",
+  "templates": [
+    {"key":"f-position","category":"experience","kind":"text","text":"What is your real position on \"{focus}\", in a sentence or two?","options":[]},
+    {"key":"f-example","category":"experience","kind":"text","text":"What is one real example or experience of yours that relates to \"{focus}\"?","options":[]},
+    {"key":"f-wrong","category":"audience","kind":"text","text":"What do people usually get wrong about \"{focus}\"?","options":[]},
+    {"key":"f-reader","category":"audience","kind":"text","text":"Who should read your post on \"{focus}\", and what should they do or think differently afterwards?","options":[]},
+    {"key":"f-friend","category":"experience","kind":"text","text":"If a friend asked you about \"{focus}\" over coffee, what would you tell them?","options":[]},
+    {"key":"f-counter","category":"evidence","kind":"text","text":"What is the strongest argument against your view on \"{focus}\"?","options":[]},
+    {"key":"f-why-now","category":"audience","kind":"text","text":"Why does \"{focus}\" matter right now?","options":[]},
+    {"key":"f-offlimits","category":"boundaries","kind":"text","text":"Is there anything about \"{focus}\" you don't want to say, or people and organizations you shouldn't name?","options":[]},
+    {"key":"f-evidence","category":"evidence","kind":"scale","text":"For your post on \"{focus}\", how much should it lean on named sources versus your own experience?","options":["Mostly my experience","Mostly named sources"]}
+  ]
+}

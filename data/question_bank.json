@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "note": "Seed questions for login prompts. kind: text | choice | scale (1 to 5; options = [low label, high label]). bank_key must be unique and never change once shipped.",
+  "questions": [
+    {"bank_key":"voice-sentence-sample","category":"voice","kind":"choice","text":"Which sentence sounds most like you?","options":["I think most teams overcomplicate this.","Honestly, most teams make this harder than it needs to be.","In my view, many teams introduce unnecessary complexity.","Here's the thing: it's simpler than people make it."]},
+    {"bank_key":"voice-formality","category":"voice","kind":"scale","text":"How formal should your writing feel?","options":["Like talking to a friend","Like a journal article"]},
+    {"bank_key":"voice-person","category":"voice","kind":"choice","text":"Do you prefer to write in the first person?","options":["Yes, I say 'I'","Mostly 'you' to the reader","Neutral, no 'I' or 'you'","Depends on the post"]},
+    {"bank_key":"voice-humor","category":"voice","kind":"choice","text":"How much humor belongs in your posts?","options":["None","A dry line now and then","Regularly","As much as possible"]},
+    {"bank_key":"voice-contractions","category":"voice","kind":"choice","text":"Do you use contractions (don't, it's, can't) when you write?","options":["Always","Sometimes","Rarely","Never"]},
+    {"bank_key":"voice-writer-model","category":"voice","kind":"text","text":"Name a writer, blog or publication whose tone you'd like to borrow from. What do you like about it?","options":[]},
+    {"bank_key":"voice-keep-phrases","category":"voice","kind":"text","text":"Are there words or phrases you use a lot and want kept in your writing?","options":[]},
+    {"bank_key":"voice-avoid-phrases","category":"voice","kind":"text","text":"Which words or phrases make you wince when you see them in writing?","options":[]},
+    {"bank_key":"voice-sentence-length","category":"voice","kind":"scale","text":"What sentence length reads most natural to you?","options":["Short and punchy","Long and flowing"]},
+    {"bank_key":"voice-intensity","category":"voice","kind":"scale","text":"How strongly should your opinions come through?","options":["Balanced and measured","Direct and committed"]},
+
+    {"bank_key":"aud-who","category":"audience","kind":"text","text":"Who is the one reader you picture while you write?","options":[]},
+    {"bank_key":"aud-knowledge","category":"audience","kind":"scale","text":"How much do your readers already know about your topics?","options":["Newcomers","Experts"]},
+    {"bank_key":"aud-want","category":"audience","kind":"text","text":"What do you most want a reader to do or think differently after reading your posts?","options":[]},
+    {"bank_key":"aud-jargon","category":"audience","kind":"choice","text":"How do you want to handle technical terms?","options":["Avoid them","Explain them the first time","Use them freely","Depends on the post"]},
+    {"bank_key":"aud-region","category":"audience","kind":"text","text":"Is there a region or community your readers mostly belong to? Should the writing reflect it?","options":[]},
+
+    {"bank_key":"str-section-length","category":"structure","kind":"choice","text":"What kind of sections do you like to read?","options":["Short and scannable","Medium length","Long, flowing sections"]},
+    {"bank_key":"str-opening","category":"structure","kind":"choice","text":"How do you like a post to open?","options":["With the main point straight away","With a short story","With a question","With a surprising fact"]},
+    {"bank_key":"str-ending","category":"structure","kind":"choice","text":"How should a post end?","options":["Stop when the point is made","A question to the reader","A clear call to action","A short summary"]},
+    {"bank_key":"str-lists","category":"structure","kind":"scale","text":"How do you feel about bullet lists in a blog post?","options":["Avoid them","Use them often"]},
+    {"bank_key":"str-length","category":"structure","kind":"choice","text":"What length do you prefer for a typical post?","options":["Short (600 to 900 words)","Standard (1,000 to 1,500)","Long (1,800 to 2,500)"]},
+    {"bank_key":"str-headings","category":"structure","kind":"choice","text":"What style of headings do you prefer?","options":["Plain labels","Statements that make a point","Questions"]},
+
+    {"bank_key":"evd-sources-weight","category":"evidence","kind":"scale","text":"How much should your claims lean on named sources versus your own experience?","options":["Mostly my experience","Mostly named sources"]},
+    {"bank_key":"evd-trusted","category":"evidence","kind":"text","text":"Which kinds of sources do you trust most? (for example journals, government reports, trade press, books)","options":[]},
+    {"bank_key":"evd-avoid-sources","category":"evidence","kind":"text","text":"Any sources, authors or sites you want tea to avoid?","options":[]},
+    {"bank_key":"evd-numbers","category":"evidence","kind":"choice","text":"How do you feel about statistics in a post?","options":["Use them where they matter","Use sparingly","Only with a clear source","Avoid them"]},
+    {"bank_key":"evd-uncertainty","category":"evidence","kind":"choice","text":"When the evidence is unclear, how should the post handle it?","options":["Say so plainly","Present the strongest view and note the doubt","Skip the point"]},
+    {"bank_key":"evd-citations","category":"evidence","kind":"choice","text":"How visible should citations be in the text?","options":["Links inline","A sources list at the end","Both"]},
+
+    {"bank_key":"exp-learned","category":"experience","kind":"text","text":"What is one thing you learned recently that you'd like to write about?","options":[]},
+    {"bank_key":"exp-mistake","category":"experience","kind":"text","text":"What is a mistake you made recently that taught you something?","options":[]},
+    {"bank_key":"exp-wrong","category":"experience","kind":"text","text":"What do people usually get wrong about the subjects you care about?","options":[]},
+    {"bank_key":"exp-coffee","category":"experience","kind":"text","text":"If a friend asked about one of your topics over coffee, what would you tell them?","options":[]},
+    {"bank_key":"exp-example","category":"experience","kind":"text","text":"What's a concrete example from your own work or study that you often come back to?","options":[]},
+    {"bank_key":"exp-change-mind","category":"experience","kind":"text","text":"What's something you used to believe about your field that you've changed your mind on?","options":[]},
+    {"bank_key":"exp-proud","category":"experience","kind":"text","text":"What's something you've built, written or done lately that you're proud of, and why?","options":[]},
+    {"bank_key":"exp-advice","category":"experience","kind":"text","text":"What advice do you wish someone had given you a year ago?","options":[]},
+
+    {"bank_key":"bnd-offlimits","category":"boundaries","kind":"text","text":"Is there anything you can't or don't want to mention in your posts? (employers, clients, unpublished work, people)","options":[]},
+    {"bank_key":"bnd-names","category":"boundaries","kind":"choice","text":"How should tea handle real people or organizations in a post?","options":["Name them freely","Name only public figures and organizations","Keep everyone anonymous","Ask me each time"]},
+    {"bank_key":"bnd-politics","category":"boundaries","kind":"choice","text":"How do you want to handle politically charged topics?","options":["Avoid them","Cover them neutrally","Take a clear position when I choose to"]},
+    {"bank_key":"bnd-personal","category":"boundaries","kind":"choice","text":"How personal should your posts get?","options":["Not personal","Occasional personal examples","Quite personal"]}
+  ]
+}

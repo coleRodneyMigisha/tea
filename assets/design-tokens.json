@@ -1,0 +1,72 @@
+{
+  "name": "tea",
+  "concept": "Steeping: the week is a cup of tea that darkens from pale jade on Monday to deep oolong on Friday 6 pm.",
+  "color": {
+    "light": {
+      "bg": "#E4ECE5",
+      "surface": "#F8FAF7",
+      "surface_raised": "#FFFFFF",
+      "ink": "#1B2420",
+      "muted": "#5B6A62",
+      "line": "#C9D6CB",
+      "primary": "#4F7A3A",
+      "primary_hover": "#436A31",
+      "primary_ink": "#FFFFFF",
+      "primary_soft": "#DCE8CF",
+      "attention": "#9C2F54",
+      "attention_soft": "#F3DDE4",
+      "amber": "#B5701F",
+      "amber_soft": "#F4E6C8",
+      "focus_ring": "#4F7A3A",
+      "shadow": "rgba(27, 52, 38, 0.14)"
+    },
+    "dark": {
+      "bg": "#141A17",
+      "surface": "#1C2420",
+      "surface_raised": "#242E29",
+      "ink": "#E6EEE8",
+      "muted": "#9DAEA3",
+      "line": "#2C3832",
+      "primary": "#8DBB6F",
+      "primary_hover": "#A0CB84",
+      "primary_ink": "#12200C",
+      "primary_soft": "#26361F",
+      "attention": "#E0708F",
+      "attention_soft": "#3A1F29",
+      "amber": "#D9954A",
+      "amber_soft": "#3A2C14",
+      "focus_ring": "#8DBB6F",
+      "shadow": "rgba(0, 0, 0, 0.45)"
+    },
+    "steep_stops": [
+      { "at": 0.0,  "hex": "#DCE8CF", "name": "jade" },
+      { "at": 0.35, "hex": "#E8C46A", "name": "golden" },
+      { "at": 0.7,  "hex": "#B5701F", "name": "oolong" },
+      { "at": 1.0,  "hex": "#5A3517", "name": "pu-erh" }
+    ]
+  },
+  "font": {
+    "ui": ["Instrument Sans", "Noto Sans", "Ubuntu", "sans-serif"],
+    "reading": ["Newsreader", "Noto Serif", "Liberation Serif", "serif"],
+    "mono": ["Ubuntu Mono", "DejaVu Sans Mono", "monospace"]
+  },
+  "type_scale_px": {
+    "caption": 12,
+    "body": 14,
+    "ui_strong": 14,
+    "title_s": 16,
+    "title_m": 20,
+    "display": 30,
+    "reading_body": 19,
+    "reading_h3": 20,
+    "reading_h2": 25,
+    "reading_h1": 34
+  },
+  "line_height": { "ui": 1.45, "reading": 1.65 },
+  "reading_measure_px": 680,
+  "spacing_px": [4, 8, 12, 16, 24, 32, 48],
+  "radius_px": { "chip": 999, "control": 8, "panel": 14, "popup": 18 },
+  "window": { "min_width": 900, "min_height": 600, "default_width": 1120, "default_height": 740, "rail_width": 208 },
+  "popup": { "width": 460, "margin": 24 },
+  "motion_ms": { "ring_settle": 450, "popup_in": 160, "control": 120 }
+}
