@@ -1,6 +1,7 @@
 """Paths (platformdirs), constants and defaults.
 
-Each folder can be overridden with TEA_DATA_DIR, TEA_CONFIG_DIR or TEA_STATE_DIR (tests, dev).
+Each folder can be overridden with TEA_DATA_DIR, TEA_CONFIG_DIR, TEA_STATE_DIR or TEA_RUNTIME_DIR
+(tests, dev).
 """
 
 import os
@@ -45,6 +46,20 @@ def config_dir() -> Path:
 
 def state_dir() -> Path:
     return _dir("TEA_STATE_DIR", platformdirs.user_state_path(APP_NAME))
+
+
+def runtime_dir() -> Path:
+    """Lock file and local socket for single instance (ARCHITECTURE 1)."""
+    return _dir("TEA_RUNTIME_DIR", platformdirs.user_runtime_path(APP_NAME))
+
+
+def icon_cache_dir() -> Path:
+    """Recolored icon copies written by the theme."""
+    return state_dir() / "icons"
+
+
+def window_state_path() -> Path:
+    return state_dir() / "window.ini"
 
 
 def uploads_dir() -> Path:

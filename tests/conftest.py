@@ -17,7 +17,7 @@ KAMPALA = ZoneInfo("Africa/Kampala")
 
 @pytest.fixture(autouse=True)
 def tmp_dirs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    for name in ("DATA", "CONFIG", "STATE"):
+    for name in ("DATA", "CONFIG", "STATE", "RUNTIME"):
         folder = tmp_path / name.lower()
         monkeypatch.setenv(f"TEA_{name}_DIR", str(folder))
     monkeypatch.delenv("TEA_DEBUG", raising=False)
