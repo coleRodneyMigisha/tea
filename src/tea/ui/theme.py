@@ -28,7 +28,20 @@ ICON_NAMES = (
 )  # fmt: skip
 
 # Sizes from UI_DESIGN that the token file does not carry.
-_EXTRA_PX = {"icon": 20, "wordmark_icon": 28, "wordmark": 24, "panel_padding": 20}
+_EXTRA_PX = {
+    "icon": 20,
+    "wordmark_icon": 28,
+    "wordmark": 24,
+    "panel_padding": 20,
+    # Question popup (UI_DESIGN 4): card height range and its green-tinted shadow.
+    "popup_min_height": 240,
+    "popup_max_height": 520,
+    "popup_shadow_blur": 24,
+    "popup_shadow_y": 8,
+    # Answers preview dialog: the same width as the focus dialog.
+    "dialog_width": 520,
+}
+_RGBA = re.compile(r"rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)")
 # Icons referenced from the QSS template, and the color role each is drawn in.
 _QSS_ICON_ROLES = {"check-on-primary": "primary_ink"}
 _GENERIC_FAMILIES = {"serif", "sans-serif", "monospace"}
@@ -90,6 +103,15 @@ def _scale_px(qss: str, scale: float) -> str:
         return f"{max(1, _round(value * scale)) if value else 0}px"
 
     return _PX.sub(repl, qss)
+
+
+def parse_color(value: str) -> QColor:
+    """A token color: `#rrggbb` or `rgba(r, g, b, a)` (QColor does not read the latter)."""
+    match = _RGBA.fullmatch(value.strip())
+    if match is None:
+        return QColor(value)
+    r, g, b, a = match.groups()
+    return QColor(int(r), int(g), int(b), _round(float(a) * 255))
 
 
 def recolor_svg(name: str, color: str) -> str:
@@ -276,7 +298,10 @@ class Theme(QObject):
         return QSize(side, side)
 
     def color(self, role: str) -> QColor:
-        return QColor(self.tokens["color"][self.mode][role])
+        return parse_color(self.tokens["color"][self.mode][role])
+
+    def motion_ms(self, name: str) -> int:
+        return int(self.tokens["motion_ms"][name])
 
     def font(self, kind: FontKind, size: str) -> QFont:
         return font_for(kind, self.type_px(size), self.tokens)

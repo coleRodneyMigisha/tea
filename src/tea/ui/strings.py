@@ -73,6 +73,23 @@ AUTO_TOPIC_NOTE = "Topic picked by tea. No answers were given for this focus."
 CARRIED_OVER = "Carried over from last week. An improvement prompt is prepared on Friday."
 SHELVED = "Shelved. tea won't prepare anything for this draft unless you revive it."
 
+# Question popup (UI_DESIGN 4)
+POPUP_PROGRESS = "Question {n} of {m}"
+POPUP_NEXT = "Next"
+POPUP_DONE = "Done"
+POPUP_SKIP = "Skip"
+POPUP_BACK = "Back"
+POPUP_LATER = "Later"
+POPUP_LATER_TOOLTIP = "Close for now. Your answers so far are kept."
+POPUP_SCALE_POINT = "{n} of 5"
+POPUP_SCALE_END = "{n} of 5, {label}"
+
+# Answers preview (SPEC 6)
+PREVIEW_TITLE = "What Claude will be told about you"
+PREVIEW_INTRO = "This is the answers section exactly as it appears in a prompt."
+PREVIEW_EMPTY = "No answers yet. Answer a few questions and they show up here."
+PREVIEW_CLOSE = "Close"
+
 # Hand-off import
 UNTITLED_DRAFT = "Untitled draft"
 

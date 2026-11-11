@@ -45,10 +45,14 @@ QCheckBox, QRadioButton { spacing: 8px; background: transparent; }
 QCheckBox::indicator { width: 18px; height: 18px; border: 1.5px solid {{muted}}; border-radius: 5px; background: {{surface_raised}}; }
 QCheckBox::indicator:checked { background: {{primary}}; border-color: {{primary}}; image: url(:/icons/check-on-primary.svg); }
 QCheckBox::indicator:focus { border: 2px solid {{focus_ring}}; }
+/* Outer size 18 in both states: width + 2 x border. */
+QRadioButton::indicator { width: 14px; height: 14px; border: 2px solid {{muted}}; border-radius: 9px; background: {{surface_raised}}; }
+QRadioButton::indicator:checked { width: 8px; height: 8px; border: 5px solid {{primary}}; border-radius: 9px; background: {{primary_ink}}; }
 
 /* Scale (1 to 5) segmented control: five checkable QPushButtons with property seg="true" */
-QPushButton[seg="true"] { min-width: 44px; padding: 8px 0; border-radius: 0; border: 1px solid {{line}}; background: {{surface_raised}}; }
-QPushButton[seg="true"]:checked { background: {{primary}}; color: {{primary_ink}}; border-color: {{primary}}; }
+QPushButton[seg="true"], QPushButton[seg="first"], QPushButton[seg="last"] { min-width: 44px; padding: 8px 0; border-radius: 0; border: 1px solid {{line}}; background: {{surface_raised}}; }
+QPushButton[seg="true"]:checked, QPushButton[seg="first"]:checked, QPushButton[seg="last"]:checked { background: {{primary}}; color: {{primary_ink}}; border-color: {{primary}}; }
+QPushButton[seg="true"]:focus, QPushButton[seg="first"]:focus, QPushButton[seg="last"]:focus { border: 2px solid {{focus_ring}}; padding: 7px 0; }
 QPushButton[seg="first"] { border-top-left-radius: {{r_control}}px; border-bottom-left-radius: {{r_control}}px; }
 QPushButton[seg="last"]  { border-top-right-radius: {{r_control}}px; border-bottom-right-radius: {{r_control}}px; }
 
@@ -72,6 +76,12 @@ QLabel#Chip[state="shelved"]  { background: transparent; color: {{muted}}; borde
 QWidget#PopupCard { background: {{surface_raised}}; border: 1px solid {{line}}; border-radius: {{r_popup}}px; }
 QLabel#PopupQuestion { font-family: {{font_reading}}; font-size: 22px; font-weight: 500; }
 QLabel#PopupProgress { color: {{muted}}; font-size: {{px_caption}}px; }
+QWidget#PopupHeader { background: transparent; }
+QLabel#DialogTitle { font-family: {{font_reading}}; font-size: 22px; font-weight: 500; }
+QRadioButton[row="true"] { padding: 8px 10px; border: 1px solid {{line}}; border-radius: {{r_control}}px; background: {{surface_raised}}; }
+QRadioButton[row="true"]:hover { background: {{primary_soft}}; }
+QRadioButton[row="true"]:checked { background: {{primary_soft}}; border-color: {{primary}}; }
+QRadioButton[row="true"]:focus { border: 2px solid {{focus_ring}}; padding: 7px 9px; }
 
 /* Verification panel */
 QLabel[verdict="supported"]   { color: {{primary}}; font-weight: 600; }
