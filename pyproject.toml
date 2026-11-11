@@ -28,6 +28,7 @@ packages = ["src/tea"]
 [tool.hatch.build.targets.wheel.force-include]
 "data" = "tea/data"
 "prompts" = "tea/prompts"
+"assets" = "tea/assets"
 
 [tool.ruff]
 line-length = 100

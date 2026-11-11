@@ -88,3 +88,10 @@ QScrollBar::handle:horizontal { background: {{line}}; border-radius: 5px; min-wi
 
 QToolTip { background: {{ink}}; color: {{bg}}; border: none; padding: 6px 8px; border-radius: 6px; }
 QFrame[divider="true"] { background: {{line}}; max-height: 1px; min-height: 1px; border: none; }
+
+/* Shell (M3): rail footer status line and screen headings */
+QPushButton#RailFooter { text-align: left; padding: 6px 14px; border: none; border-radius: {{r_control}}px; background: transparent; color: {{muted}}; font-size: {{px_caption}}px; font-weight: 400; }
+QPushButton#RailFooter:hover { color: {{ink}}; background: {{primary_soft}}; }
+QPushButton#RailFooter:focus { border: 2px solid {{focus_ring}}; padding: 4px 12px; }
+QPushButton[nav="true"]:focus { border: 2px solid {{focus_ring}}; padding: 7px 12px; }
+QWidget#Content { background: {{bg}}; }
