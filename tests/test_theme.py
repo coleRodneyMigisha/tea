@@ -191,3 +191,11 @@ def test_paused_footer_text_is_not_amber(tmp_path: Path) -> None:
     qss = render_qss(load_tokens(), "light", 1.0, tmp_path)
     rule = next(line for line in qss.splitlines() if 'RailFooter[state="paused"]' in line)
     assert TOKENS["color"]["light"]["amber"] not in rule
+
+
+def test_button_variants_keep_a_focus_ring(tmp_path: Path) -> None:
+    """The plain :focus rule loses to variant rules, so each variant needs its own."""
+    qss = render_qss(load_tokens(), "light", scale=1.0, icon_dir=tmp_path)
+    for variant in ("quiet", "primary", "danger"):
+        rule = qss.split(f'QPushButton[variant="{variant}"]:focus', 1)[1].split("}", 1)[0]
+        assert "border: 2px solid" in rule, variant

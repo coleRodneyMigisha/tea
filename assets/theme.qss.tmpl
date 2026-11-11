@@ -25,10 +25,16 @@ QPushButton:focus { border: 2px solid {{focus_ring}}; padding: 7px 15px; }
 QPushButton:disabled { color: {{muted}}; background: {{bg}}; border-color: {{line}}; }
 QPushButton[variant="primary"] { background: {{primary}}; color: {{primary_ink}}; border: 1px solid {{primary}}; font-weight: 600; }
 QPushButton[variant="primary"]:hover { background: {{primary_hover}}; border-color: {{primary_hover}}; }
-QPushButton[variant="primary"]:disabled { background: {{line}}; color: {{muted}}; border-color: {{line}}; }
 QPushButton[variant="quiet"] { background: transparent; border: none; color: {{muted}}; }
 QPushButton[variant="quiet"]:hover { color: {{ink}}; background: {{primary_soft}}; }
 QPushButton[variant="danger"] { color: {{attention}}; border-color: {{attention}}; background: transparent; }
+/* Focus rings for the variants: the plain :focus rule above loses to the variant rules.
+   Quiet buttons get the matcha ring; a matcha ring is invisible on the matcha fill, so
+   primary buttons get an ink ring (see DEVIATIONS, M4). */
+QPushButton[variant="quiet"]:focus { border: 2px solid {{focus_ring}}; padding: 6px 14px; }
+QPushButton[variant="primary"]:focus { border: 2px solid {{ink}}; padding: 7px 15px; }
+QPushButton[variant="danger"]:focus { border: 2px solid {{focus_ring}}; padding: 7px 15px; }
+QPushButton[variant="primary"]:disabled { background: {{bg}}; color: {{muted}}; border-color: {{line}}; }
 
 /* Inputs */
 QLineEdit, QPlainTextEdit, QTextEdit, QComboBox, QSpinBox, QTimeEdit {
@@ -55,6 +61,10 @@ QPushButton[seg="true"]:checked, QPushButton[seg="first"]:checked, QPushButton[s
 QPushButton[seg="true"]:focus, QPushButton[seg="first"]:focus, QPushButton[seg="last"]:focus { border: 2px solid {{focus_ring}}; padding: 7px 0; }
 QPushButton[seg="first"] { border-top-left-radius: {{r_control}}px; border-bottom-left-radius: {{r_control}}px; }
 QPushButton[seg="last"]  { border-top-right-radius: {{r_control}}px; border-bottom-right-radius: {{r_control}}px; }
+/* Neighbouring segments share one divider: no left border except on the first, checked or focused. */
+QPushButton[seg="true"], QPushButton[seg="last"] { border-left: none; }
+QPushButton[seg="true"]:checked, QPushButton[seg="last"]:checked { border-left: 1px solid {{primary}}; }
+QPushButton[seg="true"]:focus, QPushButton[seg="last"]:focus { border-left: 2px solid {{focus_ring}}; }
 
 /* Lists (drafts) */
 QListView, QListWidget { background: transparent; border: none; outline: none; }

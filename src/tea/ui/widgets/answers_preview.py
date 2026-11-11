@@ -22,7 +22,6 @@ class AnswersPreview(QDialog):
         super().__init__()
         self.setWindowTitle(strings.PREVIEW_TITLE)
         self.setMinimumWidth(theme.size("dialog_width"))
-        self.resize(theme.size("dialog_width"), theme.size("popup_max_height"))
         layout = QVBoxLayout(self)
         pad = theme.space(4)
         layout.setContentsMargins(pad, pad, pad, pad)
@@ -46,10 +45,15 @@ class AnswersPreview(QDialog):
         self.empty_label.setProperty("role", "muted")
         self.empty_label.setWordWrap(True)
         layout.addWidget(self.empty_label)
+        self._spacer = layout.count()
+        layout.addStretch(1)  # keeps the empty state at the top when the text box is hidden
         has_text = bool(text.strip())
+        tall = "popup_max_height" if has_text else "popup_min_height"
+        self.resize(theme.size("dialog_width"), theme.size(tall))
         self.view.setHidden(not has_text)
         self.empty_label.setHidden(has_text)
-
+        if has_text:
+            layout.setStretch(self._spacer, 0)
         row = QHBoxLayout()
         row.addStretch(1)
         close = QPushButton(strings.PREVIEW_CLOSE)

@@ -116,7 +116,7 @@ class QuestionPopup(QWidget):
         t = self.theme
         shadow_room = t.size("popup_shadow_blur")
         outer = QVBoxLayout(self)
-        outer.setContentsMargins(shadow_room, shadow_room, shadow_room, shadow_room)
+        outer.setContentsMargins(0, 0, 0, 0)
         self.card = QWidget()
         self.card.setObjectName("PopupCard")
         self.card.setAttribute(Qt.WidgetAttribute.WA_StyledBackground)
@@ -128,10 +128,11 @@ class QuestionPopup(QWidget):
         shadow.setOffset(QPointF(0, t.size("popup_shadow_y")))
         shadow.setColor(t.color("shadow"))
         self.card.setGraphicsEffect(shadow)
-        # The fade runs on this wrapper; the card itself carries the shadow effect.
+        # The fade runs on this wrapper; the card carries the shadow, which is drawn inside
+        # the wrapper's margins (an effect cannot paint outside its parent).
         self._fade = QWidget()
         wrap = QVBoxLayout(self._fade)
-        wrap.setContentsMargins(0, 0, 0, 0)
+        wrap.setContentsMargins(shadow_room, shadow_room, shadow_room, shadow_room)
         wrap.addWidget(self.card)
         outer.addWidget(self._fade)
 
@@ -341,6 +342,12 @@ class QuestionPopup(QWidget):
         self.close()
         self.finished.emit(reason)
 
+    def make_manual(self) -> None:
+        """The owner asked for questions while a login popup was open: no auto-close now."""
+        self.login = False
+        self._idle.stop()
+        self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, False)
+
     # Showing
 
     def showEvent(self, event: QShowEvent) -> None:
@@ -370,7 +377,7 @@ class QuestionPopup(QWidget):
         progress = float(value)  # type: ignore[arg-type]
         self.rise = round(self.theme.space(1) * (1 - progress))
         room = self.theme.size("popup_shadow_blur")
-        layout = self.layout()
+        layout = self._fade.layout()
         assert layout is not None
         layout.setContentsMargins(room, room + self.rise, room, room - self.rise)
         effect = self._fade.graphicsEffect()
