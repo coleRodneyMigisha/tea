@@ -12,9 +12,11 @@ TOKENS = json.loads((config.resource_dir("assets") / "design-tokens.json").read_
 HEX = re.compile(r"#[0-9A-Fa-f]{6}\b|#[0-9A-Fa-f]{8}\b|#[0-9A-Fa-f]{3}\b")
 PX = re.compile(r"\d\s*px\b")
 SIZE_CALLS = re.compile(
-    r"\b(setPixelSize|setPointSizeF?|setFixed(Width|Height|Size)|resize|setMinimum(Width|Height|Size)"
-    r"|setMaximum(Width|Height|Size)|setIconSize|setContentsMargins|setSpacing)\(\s*[1-9]"
+    r"\b(setPixelSize|setPointSizeF?|setFixed(?:Width|Height|Size)|resize|setMinimum(?:Width|Height|Size)"
+    r"|setMaximum(?:Width|Height|Size)|setIconSize|setContentsMargins|setSpacing|QSize|QSizeF"
+    r"|QMargins|QRect|QRectF)\("
 )
+INT_LITERAL = re.compile(r"(?<![\w.])[1-9]\d*(?:\.\d+)?(?![\w.])")
 NAMED_COLOR = re.compile(
     r"QColor\(\s*['\"]|Qt\.GlobalColor|Qt\.(red|green|blue|black|white|gray)\b"
 )
@@ -49,8 +51,35 @@ def test_no_pixel_sizes_in_widgets() -> None:
     for path in _widget_files():
         text = path.read_text()
         hits += [f"{path.name}: px" for _ in PX.findall(text)]
-        hits += [f"{path.name}: {m.group(1)}" for m in SIZE_CALLS.finditer(text)]
+        for match in SIZE_CALLS.finditer(text):
+            if INT_LITERAL.search(_call_args(text, match.end())):
+                hits.append(f"{path.name}: {match.group(1)}")
     assert hits == []
+
+
+def _call_args(text: str, start: int) -> str:
+    """The argument text of a call whose "(" ends at `start`, nested calls stripped."""
+    depth, out = 1, []
+    for ch in text[start:]:
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+            if depth == 0:
+                break
+        elif depth == 1:
+            out.append(ch)
+    return "".join(out)
+
+
+def test_size_check_catches_literals_in_any_argument() -> None:
+    sample = "a.setContentsMargins(x, 0, 0, 12)\nb = QSize(20, 20)\nc.setSpacing(t.space(2))"
+    found = [
+        m.group(1)
+        for m in SIZE_CALLS.finditer(sample)
+        if INT_LITERAL.search(_call_args(sample, m.end()))
+    ]
+    assert found == ["setContentsMargins", "QSize"]
 
 
 def _texts() -> list[str]:

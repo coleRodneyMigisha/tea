@@ -1,5 +1,7 @@
 """Single instance: QLockFile plus a local socket (ARCHITECTURE section 1)."""
 
+import subprocess
+import sys
 from pathlib import Path
 
 from pytestqt.qtbot import QtBot
@@ -52,3 +54,29 @@ def test_stale_socket_file_does_not_block_listening(tmp_path: Path) -> None:
         assert first.acquire()
     finally:
         first.release()
+
+
+def test_lock_left_by_a_crashed_process_is_recovered(tmp_path: Path) -> None:
+    code = (
+        "import os, sys; from pathlib import Path; "
+        "from tea.single_instance import SingleInstance; "
+        "inst = SingleInstance(Path(sys.argv[1])); os._exit(0 if inst.acquire() else 3)"
+    )
+    crashed = subprocess.run([sys.executable, "-c", code, str(tmp_path)], timeout=60)
+    assert crashed.returncode == 0
+    assert (tmp_path / "tea.lock").exists()  # left behind
+    after = SingleInstance(tmp_path)
+    try:
+        assert after.acquire()
+    finally:
+        after.release()
+
+
+def test_listen_failure_is_recorded_not_raised(tmp_path: Path) -> None:
+    deep = tmp_path / ("x" * 120)  # longer than the Unix socket path limit
+    inst = SingleInstance(deep)
+    try:
+        assert inst.acquire()
+        assert inst.listen_error
+    finally:
+        inst.release()

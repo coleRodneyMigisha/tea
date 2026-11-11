@@ -4,6 +4,7 @@ This is the only UI module that may name colors, font families or pixel sizes.
 Everything else asks the `Theme` for them.
 """
 
+import hashlib
 import json
 import logging
 import re
@@ -97,11 +98,16 @@ def recolor_svg(name: str, color: str) -> str:
 
 
 def write_icon(name: str, color: str, folder: Path) -> Path:
-    """Write a recolored copy once and return its path."""
+    """Write a recolored copy once and return its path.
+
+    The file name carries a hash of the result, so a changed source SVG gets a new copy.
+    """
     folder.mkdir(parents=True, exist_ok=True)
-    path = folder / f"{name}-{color.lstrip('#').lower()}.svg"
+    text = recolor_svg(name, color)
+    digest = hashlib.sha256(text.encode("utf-8")).hexdigest()[:10]
+    path = folder / f"{name}-{color.lstrip('#').lower()}-{digest}.svg"
     if not path.exists():
-        path.write_text(recolor_svg(name, color), encoding="utf-8")
+        path.write_text(text, encoding="utf-8")
     return path
 
 

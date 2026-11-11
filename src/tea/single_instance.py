@@ -8,8 +8,6 @@ from pathlib import Path
 from PySide6.QtCore import QLockFile, QObject, Signal
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 
-from tea.logging_setup import log_event
-
 SOCKET_NAME = "tea-ipc"
 LOCK_NAME = "tea.lock"
 _MAX_MESSAGE = 64
@@ -28,6 +26,7 @@ class SingleInstance(QObject):
         self._socket_path = str(folder / SOCKET_NAME)
         self._server: QLocalServer | None = None
         self._clients: list[QLocalSocket] = []
+        self.listen_error: str | None = None
 
     def acquire(self) -> bool:
         self._folder.mkdir(parents=True, exist_ok=True)
@@ -37,7 +36,8 @@ class SingleInstance(QObject):
         server = QLocalServer(self)
         server.setSocketOptions(QLocalServer.SocketOption.UserAccessOption)
         if not server.listen(self._socket_path):
-            log_event("ipc_listen_failed", error=server.serverError().name)
+            # Logging may not be set up yet; the app logs this after setup_logging().
+            self.listen_error = server.serverError().name
         server.newConnection.connect(self._on_connection)
         self._server = server
         return True

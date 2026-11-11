@@ -50,7 +50,7 @@ def test_scale_multiplies_pixel_sizes(tmp_path: Path) -> None:
 def test_icon_urls_point_at_recolored_files(tmp_path: Path) -> None:
     qss = render_qss(load_tokens(), "dark", 1.0, tmp_path)
     assert ":/icons/" not in qss
-    match = re.search(r"url\(([^)]+check-on-primary-[0-9a-f]+\.svg)\)", qss)
+    match = re.search(r"url\(([^)]+check-on-primary-[0-9a-f]+-[0-9a-f]+\.svg)\)", qss)
     assert match
     svg = Path(match.group(1)).read_text()
     assert TOKENS["color"]["dark"]["primary_ink"] in svg

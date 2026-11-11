@@ -29,7 +29,9 @@ def _load_settings() -> Settings:
 class TeaApp:
     """Holds the long-lived objects so Qt does not garbage-collect them."""
 
-    def __init__(self, app: QApplication, instance: SingleInstance) -> None:
+    def __init__(
+        self, app: QApplication, instance: SingleInstance, tray_available: bool | None = None
+    ) -> None:
         self.app = app
         self.instance = instance
         self.clock = SystemClock()
@@ -39,7 +41,9 @@ class TeaApp:
         self.theme.apply()
         self.window = MainWindow(self.theme, settings, save_settings=self._save)
         self.tray: Tray | None = None
-        if QSystemTrayIcon.isSystemTrayAvailable():
+        if tray_available is None:
+            tray_available = QSystemTrayIcon.isSystemTrayAvailable()
+        if tray_available:
             self._build_tray(settings)
         else:
             log_event("tray_unavailable", logging.WARNING)
@@ -78,6 +82,11 @@ class TeaApp:
         if self.tray is not None:
             self.tray.set_attention(False)
 
+    def start(self, background: bool) -> None:
+        """Show the window, or stay in the tray for `--background` (autostart)."""
+        if not background:
+            self.window.show()
+
     def quit(self) -> None:
         self.window.save_geometry()
         self.app.quit()
@@ -95,11 +104,12 @@ def run_app(background: bool = False) -> int:
         print(strings.INSTANCE_NOT_RESPONDING, file=sys.stderr)
         return 1
     setup_logging()
+    if instance.listen_error:
+        log_event("ipc_listen_failed", logging.WARNING, error=instance.listen_error)
     log_event("app_start", background=background)
     tea = TeaApp(app, instance)
     app.setWindowIcon(tea.theme.app_icon())
-    if not background:
-        tea.window.show()
+    tea.start(background)
     try:
         return app.exec()
     finally:
