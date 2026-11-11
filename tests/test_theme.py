@@ -115,6 +115,15 @@ def test_bundled_fonts_register(qapp: QApplication) -> None:
     assert "Newsreader" in families
 
 
+@pytest.mark.parametrize("family", ["JetBrains Mono", "Newsreader"])
+def test_bundled_fonts_have_real_weights(qapp: QApplication, family: str) -> None:
+    from PySide6.QtGui import QFontDatabase
+
+    theme_mod.load_fonts()
+    weights = {QFontDatabase.weight(family, s) for s in QFontDatabase.styles(family)}
+    assert {400, 500, 600, 700} <= weights
+
+
 def test_missing_font_logs_warning_and_does_not_raise(
     qapp: QApplication, tmp_path: Path, caplog: pytest.LogCaptureFixture
 ) -> None:

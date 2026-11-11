@@ -15,7 +15,7 @@ import os
 import sys
 import tempfile
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -31,10 +31,11 @@ Seed = Callable[[Repos, Clock], None]
 
 @dataclass(frozen=True)
 class State:
-    """How to reach a state: optional sample data to seed, and the window screen to show."""
+    """How to reach a state: the screen to show, sample data to seed, settings to change."""
 
     screen: str
     seed: Seed | None = None
+    settings: dict[str, object] = field(default_factory=dict)
 
 
 REGISTRY: dict[str, dict[str, State]] = {}
@@ -46,6 +47,7 @@ def register(screen: str, state: str, spec: State) -> None:
 
 for _screen in ("this_week", "new_blog", "drafts", "settings"):
     register(_screen, "empty", State(_screen))
+register("this_week", "paused", State("this_week", settings={"pause_automation": True}))
 
 
 def _isolate() -> tempfile.TemporaryDirectory[str]:
@@ -85,7 +87,8 @@ def render(screen: str, state: str, theme_name: str, scale: float, out: Path) ->
     assert isinstance(app, QApplication)
     theme = Theme(app, appearance=theme_name, scale=scale)
     theme.apply()
-    window = MainWindow(theme, Settings(), save_settings=lambda _s: None, remember_geometry=False)
+    settings = Settings.model_validate(spec.settings)
+    window = MainWindow(theme, settings, save_settings=lambda _s: None, remember_geometry=False)
     window.show_screen(spec.screen)
     window.show()
     app.processEvents()

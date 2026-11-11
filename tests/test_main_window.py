@@ -47,6 +47,12 @@ def test_starts_on_this_week_with_empty_focus_copy(window: MainWindow) -> None:
     assert strings.EMPTY_FOCUS in _labels(window)
 
 
+def test_empty_focus_uses_muted_display_style(window: MainWindow) -> None:
+    label = next(lb for lb in window.findChildren(QLabel) if lb.text() == strings.EMPTY_FOCUS)
+    assert label.property("role") == "display"
+    assert label.property("muted") is True
+
+
 def test_drafts_screen_shows_empty_state(window: MainWindow) -> None:
     window.show_screen("drafts")
     assert strings.EMPTY_DRAFTS in _labels(window)
@@ -75,9 +81,12 @@ def test_footer_toggles_pause_and_saves(window: MainWindow, qtbot: QtBot, saved:
     assert footer.text() == strings.AUTOMATION_ON
     qtbot.mouseClick(footer, Qt.MouseButton.LeftButton)
     assert footer.text() == strings.AUTOMATION_PAUSED
+    assert footer.property("state") == "paused"
+    assert not footer.icon().isNull()
     assert saved[-1].pause_automation is True
     qtbot.mouseClick(footer, Qt.MouseButton.LeftButton)
     assert footer.text() == strings.AUTOMATION_ON
+    assert footer.icon().isNull()
     assert saved[-1].pause_automation is False
 
 

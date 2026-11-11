@@ -4,7 +4,7 @@ from collections.abc import Callable
 from functools import partial
 
 from PySide6.QtCore import QSettings, QSize, Qt, Signal
-from PySide6.QtGui import QCloseEvent, QKeySequence, QShortcut
+from PySide6.QtGui import QCloseEvent, QIcon, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QButtonGroup,
     QHBoxLayout,
@@ -137,10 +137,18 @@ class MainWindow(QMainWindow):
     def _refresh_icons(self) -> None:
         for button, (_name, _label, icon) in zip(self.nav_buttons, _NAV, strict=True):
             button.setIcon(self.theme.icon(icon, "muted", on_role="ink"))
+        if hasattr(self, "footer"):
+            self._refresh_footer()
 
     def _refresh_footer(self) -> None:
         paused = self.settings.pause_automation
         self.footer.setText(strings.AUTOMATION_PAUSED if paused else strings.AUTOMATION_ON)
+        # Status is text plus color plus an icon (UI_DESIGN 1, principle 3).
+        self.footer.setProperty("state", "paused" if paused else "on")
+        self.footer.setIcon(self.theme.icon("pause", "amber") if paused else QIcon())
+        self.footer.setIconSize(self.theme.icon_size())
+        self.footer.style().unpolish(self.footer)
+        self.footer.style().polish(self.footer)
         self.footer.setAccessibleName(self.footer.text())
 
     def set_paused(self, paused: bool) -> None:

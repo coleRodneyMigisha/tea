@@ -42,6 +42,16 @@ def test_single_screen_with_scale(tmp_path: Path) -> None:
     assert (image.width(), image.height()) == (1400, 925)
 
 
+def test_paused_state_renders(tmp_path: Path) -> None:
+    result = subprocess.run(
+        [sys.executable, "-m", "tea.devtools.snap", "this_week", "--state", "paused",
+         "--out", str(tmp_path)],
+        capture_output=True, text=True, timeout=120, env=_env(),
+    )  # fmt: skip
+    assert result.returncode == 0, result.stderr
+    assert (tmp_path / "this_week-paused-light.png").is_file()
+
+
 def test_unknown_state_fails(tmp_path: Path) -> None:
     result = subprocess.run(
         [sys.executable, "-m", "tea.devtools.snap", "drafts", "--state", "nope",
