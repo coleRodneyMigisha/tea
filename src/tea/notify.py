@@ -12,7 +12,7 @@ introspection. `ActionInvoked` comes back over QtDBus. The GUI thread never wait
 import logging
 import re
 import shutil
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from typing import Protocol
@@ -81,39 +81,57 @@ class Notifier(QObject):
 
     # The notifications
 
-    def prompts_ready(self, items: Sequence[tuple[int, str, str]]) -> None:
-        """`items` are (handoff id, kind, title) prepared in one pass."""
+    def prompts_ready(
+        self, items: Sequence[tuple[int, str, str]], replacing: Mapping[int, int] | None = None
+    ) -> None:
+        """`items` are (handoff id, kind, title) prepared in one pass.
+
+        `replacing` maps a new hand-off to the one it superseded (focus change, regenerate):
+        the new one takes the old one's place, so it never counts as a second prompt.
+        """
         now = self.clock.now()
-        touched: dict[str, tuple[str, str, str]] = {}
+        replacing = replacing or {}
+        touched: dict[str, tuple[_Group, str, str, int]] = {}
         for hid, kind, title in items:
             title = title or strings.CHIP_PICK
+            old = replacing.get(hid)
             g = self._group
-            if g is not None and elapsed(now, g.at) <= COALESCE_WINDOW and hid not in g.ids:
+            fresh = g is not None and elapsed(now, g.at) <= COALESCE_WINDOW
+            if g is not None and fresh and old is not None and old in g.ids:
+                i = g.ids.index(old)
+                g.ids[i], g.titles[i] = hid, title
+            elif g is not None and fresh and hid not in g.ids:
                 g.ids.append(hid)
                 g.titles.append(title)
-                self._handoff_slot[hid] = g.slot
-                body = "\n".join(g.titles)
-                touched[g.slot] = (strings.NOTIFY_TWO_READY, body, strings.NOTIFY_OPEN_HANDOFF)
-                continue
-            slot = f"handoff:{hid}"
-            self._group = _Group(now, slot, [hid], [title])
-            self._handoff_slot[hid] = slot
-            head = (
-                strings.NOTIFY_IMPROVE_READY if kind == "improve" else strings.NOTIFY_PROMPT_READY
-            )
-            touched[slot] = (head, title, strings.NOTIFY_OPEN_HANDOFF)
-        for slot, (head, body, action) in touched.items():
-            self._post(slot, slot, head, body, action)  # a group opens its first hand-off
+            else:
+                slot = self._handoff_slot.get(old, f"handoff:{hid}") if old else f"handoff:{hid}"
+                g = self._group = _Group(now, slot, [hid], [title])
+            self._handoff_slot[hid] = g.slot
+            improve = kind == "improve"
+            head = strings.NOTIFY_IMPROVE_READY if improve else strings.NOTIFY_PROMPT_READY
+            touched[g.slot] = (g, head, title, hid)
+        for slot, (g, head, title, hid) in touched.items():
+            if len(g.ids) > 1:
+                head, title, hid = strings.NOTIFY_TWO_READY, "\n".join(g.titles), g.ids[0]
+            self._post(slot, f"handoff:{hid}", head, title, strings.NOTIFY_OPEN_HANDOFF)
         if touched:
             self.announced.emit()
 
-    def reminder(self, handoff_id: int, title: str) -> None:
-        slot = self._handoff_slot.get(handoff_id, f"handoff:{handoff_id}")
-        self._post(
-            slot, f"handoff:{handoff_id}",
-            strings.NOTIFY_REMINDER, title or strings.CHIP_PICK, strings.NOTIFY_OPEN_HANDOFF,
-        )  # fmt: skip
+    def reminders(self, items: Sequence[tuple[int, str]]) -> None:
+        """Reminders from one pass: one notification, listing every waiting title."""
+        if not items:
+            return
+        first = items[0][0]
+        slot = self._handoff_slot.get(first, f"handoff:{first}")
+        for hid, _ in items:
+            self._handoff_slot.setdefault(hid, slot)
+        body = "\n".join(t or strings.CHIP_PICK for _, t in items)
+        self._post(slot, f"handoff:{first}", strings.NOTIFY_REMINDER, body,
+                   strings.NOTIFY_OPEN_HANDOFF)  # fmt: skip
         self.announced.emit()
+
+    def reminder(self, handoff_id: int, title: str) -> None:
+        self.reminders([(handoff_id, title)])
 
     def focus_prompt(self, week: date) -> None:
         self._week_notice("focus", week, strings.NOTIFY_FOCUS, strings.NOTIFY_FOCUS_BODY,

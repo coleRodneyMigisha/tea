@@ -5,6 +5,7 @@ pause. The owner's own "Set focus" or "Edit focus" never does. When the focus di
 the login questions are both due, the questions wait until the dialog closes.
 """
 
+import logging
 from collections.abc import Callable
 from datetime import date
 from typing import Protocol
@@ -111,7 +112,11 @@ class WeekFlow(QObject):
         self.screen.set_view(week_view(self.repos, self._settings(), self.clock.now()))
 
     def _save(self, week: date, text: str) -> None:
-        rebuilt = weekly.save_focus(self.repos, self._settings(), self.clock, week, text)
+        try:
+            rebuilt = weekly.save_focus(self.repos, self._settings(), self.clock, week, text)
+        except Exception as exc:  # the focus is kept; the scheduler retries the prompt
+            log_event("focus_rebuild_failed", logging.WARNING, error=type(exc).__name__)
+            rebuilt = None
         log_event("focus_saved", rebuilt=rebuilt is not None)
         if rebuilt is not None:
             self.prompt_rebuilt.emit(rebuilt.id)

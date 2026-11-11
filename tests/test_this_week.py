@@ -227,3 +227,27 @@ def test_carried_line_when_a_draft_carries(
     repos.blogs.update(b.id, carried_weeks=1)
     f.show_focus_dialog(WEEK)
     assert f.dialog is not None and f.dialog.carried_line.isVisibleTo(f.dialog)
+
+
+def test_focus_is_kept_when_the_rebuild_fails(
+    qtbot: QtBot, flow: tuple[WeekFlow, FakeLogin], repos: Repos, clock: FakeClock,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:  # fmt: skip
+    from tea.handoff.packets import PacketError
+
+    f, _ = flow
+    s = Settings()
+    weekly.enter_pick_mode(repos, s, WEEK)
+    clock.set(t(13, 18))
+    weekly.prepare_packet(repos, s, clock, "weekly_pick", WEEK)
+
+    def boom(*_a: object, **_k: object) -> None:
+        raise PacketError("no")
+
+    monkeypatch.setattr(weekly, "prepare_packet", boom)
+    f.show_focus_dialog(WEEK, owner=True)
+    assert f.dialog is not None
+    f.dialog.editor.setPlainText("Own topic")
+    f.dialog.save_button.click()  # must not raise out of the slot
+    w = repos.weeks.get(WEEK)
+    assert w is not None and w.focus_text == "Own topic"

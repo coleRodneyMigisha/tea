@@ -22,8 +22,9 @@ from tea.domain.weekly import (
     WEEKLY_KINDS,
     elapsed,
     in_catch_up,
+    pick_time,
 )
-from tea.domain.weeks import focus_due, pick_due, prompt_due, week_start
+from tea.domain.weeks import focus_due, prompt_due, week_start
 from tea.settings import Settings
 
 Trigger = Literal["start", "tick", "wake"]
@@ -201,13 +202,16 @@ def _after(now: datetime, moment: datetime | None) -> bool:
     return moment is None or elapsed(now, moment) >= timedelta(0)
 
 
-def _project_rollover(blogs: list[BlogInfo], plan: improve.RolloverPlan) -> list[BlogInfo]:
+def _project_rollover(
+    blogs: list[BlogInfo], plan: improve.RolloverPlan, week: date
+) -> list[BlogInfo]:
     out = []
     for b in blogs:
+        carried = improve.next_carried(b.carried_weeks, b.week_start, week)
         if b.id in plan.carry:
-            b = replace(b, carried_weeks=b.carried_weeks + 1)
+            b = replace(b, carried_weeks=carried)
         elif b.id in plan.expire:
-            b = replace(b, carried_weeks=b.carried_weeks + 1, status="shelved")
+            b = replace(b, carried_weeks=carried, status="shelved")
         elif b.id in plan.shelve:
             b = replace(b, status="shelved")
         out.append(b)
@@ -218,7 +222,9 @@ def _focus_due(now: datetime, week: WeekInfo, state: SchedulerState, tz: tzinfo)
     s = state.settings
     start = focus_due(week.week_start, s, tz)
     # Monday to Wednesday: until pick mode can start; with the pick switch off, until the prompt.
-    end = pick_due(week.week_start, s, tz) if s.pick_enabled else prompt_due(week.week_start, s, tz)
+    end = (
+        pick_time(week.week_start, s, tz) if s.pick_enabled else prompt_due(week.week_start, s, tz)
+    )
     if week.focus or week.pick_mode or state.focus_dialog_open:
         return False
     if not (_after(now, start) and elapsed(now, end) < timedelta(0)):
@@ -245,7 +251,7 @@ def evaluate(now: datetime, state: SchedulerState, tz: tzinfo | None = None) -> 
     if this not in state.rollover_done:
         plan = plan_rollover(blogs, this, s.carry_over_weeks)
         out.append(Rollover(this, plan.carry, plan.shelve, plan.expire))
-        blogs = _project_rollover(blogs, plan)
+        blogs = _project_rollover(blogs, plan, this)
 
     week = weeks.get(this, WeekInfo(this, None, False, None))
     if _focus_due(now, week, state, zone):
@@ -255,7 +261,7 @@ def evaluate(now: datetime, state: SchedulerState, tz: tzinfo | None = None) -> 
         s.pick_enabled
         and not week.focus
         and not week.pick_mode
-        and _after(now, pick_due(this, s, zone))
+        and _after(now, pick_time(this, s, zone))
         and state.job(PICK_JOB, this).status != "done"
     ):
         out.append(EnterPickMode(this))
@@ -287,7 +293,12 @@ def evaluate(now: datetime, state: SchedulerState, tz: tzinfo | None = None) -> 
                 for h in state.handoffs
             ):
                 out.append(PreparePacket("improve", this, b.id))
-        if not week.focus and not week.pick_mode and state.job(NO_FOCUS_JOB, this).status != "done":
+        if (
+            not s.pick_enabled  # ARCHITECTURE 4: the pick switch off case
+            and not week.focus
+            and not week.pick_mode
+            and state.job(NO_FOCUS_JOB, this).status != "done"
+        ):
             out.append(NotifyNoFocus(this))
 
     if s.reminders_enabled and state.trigger in ("start", "wake") and not state.handoff_dialog_open:

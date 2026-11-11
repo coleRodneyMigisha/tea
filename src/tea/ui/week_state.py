@@ -8,8 +8,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from tea.db.repos import Repos
-from tea.domain.weekly import WEEKLY_KINDS, elapsed, week_blog
-from tea.domain.weeks import pick_due, prompt_due, week_start
+from tea.domain.weekly import WEEKLY_KINDS, elapsed, pick_time, week_blog
+from tea.domain.weeks import prompt_due, week_start
 from tea.settings import Settings
 from tea.ui import strings
 
@@ -82,7 +82,7 @@ def week_view(repos: Repos, settings: Settings, now: datetime) -> WeekView:
     pick_mode = bool(w and w.pick_mode)
     blog = week_blog(repos, this)
     due = prompt_due(this, settings, tz)
-    pick_at = pick_due(this, settings, tz)
+    pick_at = pick_time(this, settings, tz)
 
     handoff = None
     for h in repos.handoffs.list(open_only=True, week_start=this):

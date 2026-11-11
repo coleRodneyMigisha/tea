@@ -107,7 +107,13 @@ class TeaApp:
     def _announce_rebuilt(self, handoff_id: int) -> None:
         h = self.repos.handoffs.get(handoff_id)
         if h is not None:
-            self.notifier.prompts_ready([(h.id, h.kind, handoff_title(self.repos, h))])
+            old = [
+                o.id
+                for o in self.repos.handoffs.list(status="superseded", week_start=h.week_start)
+                if o.id < h.id
+            ]
+            replacing = {h.id: old[-1]} if old else {}
+            self.notifier.prompts_ready([(h.id, h.kind, handoff_title(self.repos, h))], replacing)
         self._refresh_tray()
 
     def _on_notification_action(self, target: str) -> None:

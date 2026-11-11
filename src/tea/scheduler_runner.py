@@ -50,7 +50,7 @@ class Hooks(Protocol):
 
 class Notifications(Protocol):
     def prompts_ready(self, items: list[tuple[int, str, str]]) -> None: ...
-    def reminder(self, handoff_id: int, title: str) -> None: ...
+    def reminders(self, items: list[tuple[int, str]]) -> None: ...
     def focus_prompt(self, week: date) -> None: ...
     def pick_mode(self, week: date) -> None: ...
     def no_focus(self, week: date) -> None: ...
@@ -81,20 +81,29 @@ class Executor:
         )  # fmt: skip
         actions = evaluate(now, state)
         ready: list[tuple[int, str, str]] = []
+        waiting: list[tuple[int, str]] = []
         for action in actions:
             try:
-                self._apply(action, settings, ready)
+                self._apply(action, settings, ready, waiting)
             except Exception as exc:  # one failed job must not stop the others
                 log_event("scheduler_action_failed", logging.WARNING,
                           kind=type(action).__name__, error=type(exc).__name__)  # fmt: skip
         if ready:
             self.notifier.prompts_ready(ready)
+        if waiting:
+            self.notifier.reminders(waiting)  # one notification for every prompt still waiting
         if actions:
             log_event("scheduler_ran", kind=trigger, actions=len(actions))
             self.hooks.state_changed()
         return actions
 
-    def _apply(self, action: Action, settings: Settings, ready: list[tuple[int, str, str]]) -> None:
+    def _apply(
+        self,
+        action: Action,
+        settings: Settings,
+        ready: list[tuple[int, str, str]],
+        waiting: list[tuple[int, str]],
+    ) -> None:
         repos = self.repos
         match action:
             case Rollover(week=week, carry=carry, shelve=shelve, expire=expire):
@@ -115,7 +124,7 @@ class Executor:
                 repos.handoffs.record_reminder(hid)
                 h = repos.handoffs.get(hid)
                 if h is not None:
-                    self.notifier.reminder(hid, weekly.handoff_title(repos, h))
+                    waiting.append((hid, weekly.handoff_title(repos, h)))
             case NotifyNoFocus(week=week):
                 weekly.note_no_focus(repos, week)
                 self.notifier.no_focus(week)

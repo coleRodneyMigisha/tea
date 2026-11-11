@@ -155,3 +155,28 @@ def test_gvariant_string(text: str, expected: str) -> None:
 )
 def test_parse_notify_reply(out: str, expected: int | None) -> None:
     assert parse_notify_reply(out) == expected
+
+
+def test_a_rebuilt_prompt_replaces_the_one_it_superseded(
+    notifier: Notifier, backend: FakeBackend, clock: FakeClock
+) -> None:
+    got: list[str] = []
+    notifier.action_invoked.connect(got.append)
+    notifier.prompts_ready([(1, "weekly_pick", "")])
+    clock.advance(minutes=3)
+    notifier.prompts_ready([(2, "weekly", "Own topic")], replacing={2: 1})
+    first, second = backend.sent
+    assert (second.title, second.body) == (strings.NOTIFY_PROMPT_READY, "Own topic")
+    assert second.replaces_id == first.id
+    notifier.on_server_action(second.id, "default")
+    assert got == ["handoff:2"]
+
+
+def test_a_rebuild_after_the_window_still_replaces(
+    notifier: Notifier, backend: FakeBackend, clock: FakeClock
+) -> None:
+    notifier.prompts_ready([(1, "weekly", "Old")])
+    clock.advance(hours=1)
+    notifier.prompts_ready([(2, "weekly", "New")], replacing={2: 1})
+    first, second = backend.sent
+    assert second.replaces_id == first.id and second.title == strings.NOTIFY_PROMPT_READY

@@ -6,7 +6,7 @@ same pass. `apply_rollover` writes the plan. Nothing here ever deletes a blog or
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 
 from tea.db.repos import Repos
 from tea.domain import questions as qs
@@ -34,6 +34,11 @@ class RolloverPlan:
     expire: tuple[int, ...] = ()  # carried_weeks + 1 went past the limit: shelved
 
 
+def next_carried(carried_weeks: int, blog_week: date, week: date) -> int:
+    """`carried_weeks` after the rollover into `week`, counting weeks the app was off for."""
+    return max(carried_weeks + 1, (week - blog_week).days // 7)
+
+
 def plan_rollover(blogs: Sequence[BlogInfo], week: date, limit: int) -> RolloverPlan:
     """The plan for the first evaluate in `week`: ready, unused weekly drafts from before it."""
     candidates = sorted(
@@ -45,7 +50,7 @@ def plan_rollover(blogs: Sequence[BlogInfo], week: date, limit: int) -> Rollover
         return RolloverPlan()
     newest, older = candidates[-1], candidates[:-1]
     shelve = tuple(b.id for b in older)
-    if newest.carried_weeks + 1 > limit:
+    if next_carried(newest.carried_weeks, newest.week_start, week) > limit:
         return RolloverPlan(shelve=shelve, expire=(newest.id,))
     return RolloverPlan(carry=(newest.id,), shelve=shelve)
 
@@ -67,16 +72,16 @@ def rollover_done(repos: Repos, week: date) -> bool:
 
 def apply_rollover(repos: Repos, week: date, plan: RolloverPlan) -> None:
     with repos.transaction():
-        for blog_id in plan.carry:
+        week_of = {w.blog_id: w.week_start for w in repos.weeks.list() if w.blog_id is not None}
+        for blog_id in (*plan.carry, *plan.expire):
             blog = repos.blogs.get(blog_id)
             if blog is None:
                 continue
-            repos.blogs.update(blog_id, carried_weeks=blog.carried_weeks + 1)
-            add_improve_questions(repos, blog_id)
-        for blog_id in plan.expire:
-            blog = repos.blogs.get(blog_id)
-            if blog is not None:
-                repos.blogs.update(blog_id, carried_weeks=blog.carried_weeks + 1)
+            start = week_of.get(blog_id, week - timedelta(days=7))
+            repos.blogs.update(blog_id, carried_weeks=next_carried(blog.carried_weeks, start, week))
+            if blog_id in plan.carry:
+                add_improve_questions(repos, blog_id)
+            else:
                 shelve(repos, blog_id)
         for blog_id in plan.shelve:
             shelve(repos, blog_id)

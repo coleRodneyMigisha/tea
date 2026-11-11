@@ -607,3 +607,46 @@ def test_rollover_on_first_run_marks_week(world: World, repos: Repos) -> None:
     assert Rollover(WEEK) in world.run("start")
     assert all(not isinstance(a, Rollover) for a in world.run("start"))
     assert at(WEEK).weekday() == 0
+
+
+# Review fixes
+
+
+def test_prompt_time_before_pick_time(world: World) -> None:
+    """Prompt on Wednesday 18:00, pick on Thursday: pick mode starts at the prompt time."""
+    world.set(prompt_day=2)
+    world.at(WED, 17, 0)
+    assert ShowFocusDialog(WEEK) in world.run("start")
+    world.at(WED, 18, 1)
+    acts = world.run("start")
+    assert NotifyNoFocus(WEEK) not in acts
+    assert ShowFocusDialog(WEEK) not in acts
+    assert [a for a in acts if isinstance(a, EnterPickMode | PreparePacket)] == [
+        EnterPickMode(WEEK),
+        PreparePacket("weekly_pick", WEEK),
+    ]
+    assert count(world, strings.NOTIFY_NO_FOCUS) == 0
+
+
+def test_weeks_missed_while_off_count_towards_the_limit(world: World) -> None:
+    blog_id = ready_week(world)
+    world.at(W3, 10, 0)  # off for two weeks
+    world.run("start")
+    blog = world.repos.blogs.get(blog_id)
+    assert blog is not None and blog.status == "shelved" and blog.carried_weeks == 3
+    world.at(W3 + timedelta(days=4), 18, 0)
+    assert all(p.kind != "improve" for p in packets(world.run()))
+
+
+def test_reminders_in_one_pass_are_one_notification(world: World) -> None:
+    ready_week(world)
+    world.at(W1, 9, 5)
+    world.set_focus("This week's idea", W1)
+    world.at(FRI1, 18, 0)
+    world.run()
+    world.at(FRI1, 21, 0)
+    before = len(world.backend.sent)
+    assert len(reminders(world.run("start"))) == 2
+    [sent] = world.backend.sent[before:]
+    assert sent.title == strings.NOTIFY_REMINDER and "This week's idea" in sent.body
+    assert len(sent.body.splitlines()) == 2

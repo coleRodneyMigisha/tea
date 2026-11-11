@@ -3,13 +3,13 @@
 The scheduler decides *when*; these functions do the work and keep the database consistent.
 """
 
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta, tzinfo
 
 from tea.clock import Clock
 from tea.db.repos import Repos
 from tea.db.rows import Blog, Handoff
 from tea.domain import questions as qs
-from tea.domain.weeks import prompt_due
+from tea.domain.weeks import pick_due, prompt_due
 from tea.handoff import packets
 from tea.settings import Settings
 
@@ -29,6 +29,11 @@ def elapsed(now: datetime, since: datetime) -> timedelta:
 
 def in_catch_up(now: datetime, due: datetime) -> bool:
     return timedelta(0) <= elapsed(now, due) <= CATCH_UP
+
+
+def pick_time(week: date, settings: Settings, tz: tzinfo) -> datetime:
+    """When pick mode starts: the pick time, or the prompt time if that comes first."""
+    return min(pick_due(week, settings, tz), prompt_due(week, settings, tz))
 
 
 def week_blog(repos: Repos, week: date) -> Blog | None:
@@ -70,15 +75,15 @@ def save_focus(
             repos.blogs.update(blog.id, title=text, topic=text, topic_origin="owner")
         qs.instantiate_focus(repos, week, text)
         repos.jobs.set_status(FOCUS_JOB, "done", week)
-        if not changed:
-            return None
         superseded = False
-        for h in repos.handoffs.list(open_only=True, week_start=week):
-            if h.kind in WEEKLY_KINDS:
-                repos.handoffs.mark_superseded(h.id)
-                superseded = True
-        if superseded and in_catch_up(clock.now(), prompt_due(week, settings, clock.tz())):
-            return prepare_packet(repos, settings, clock, "weekly", week)
+        if changed:
+            for h in repos.handoffs.list(open_only=True, week_start=week):
+                if h.kind in WEEKLY_KINDS:
+                    repos.handoffs.mark_superseded(h.id)
+                    superseded = True
+    # The focus is saved even if the rebuild fails; the scheduler then retries the packet.
+    if superseded and in_catch_up(clock.now(), prompt_due(week, settings, clock.tz())):
+        return prepare_packet(repos, settings, clock, "weekly", week)
     return None
 
 

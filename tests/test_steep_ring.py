@@ -118,3 +118,12 @@ def test_accessible_name(qtbot: QtBot, theme: Theme) -> None:
     ring = make(qtbot, theme)
     ring.set_state("steeping", 0.5, "2 days", "until your prompt", sentence="Prompt due soon")
     assert ring.accessibleName() == "Prompt due soon"
+
+
+def test_end_cap_keeps_the_arc_colour_near_full(qtbot: QtBot, theme: Theme) -> None:
+    """At 0.99 the end sits by 12 o'clock, where the gradient wraps to the first stop."""
+    ring = make(qtbot, theme)
+    ring.set_state("steeping", 0.99, "1 hour", "")
+    img = ring.grab().toImage()
+    last = theme.steep_stops()[-1][1]
+    assert close(pixel(img, ring, 0.99 * 360), last, tol=30)

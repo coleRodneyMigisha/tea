@@ -126,9 +126,39 @@ class SteepRing(QWidget):
                 p.drawEllipse(rect)
             else:
                 p.drawArc(rect, 90 * 16, span)
+                self._paint_end_cap(p, rect)
 
         self._paint_text(p)
         p.end()
+
+    def colour_at(self, at: float) -> QColor:
+        """The steep colour at clockwise progress `at`, interpolated between stops."""
+        stops = self.theme.steep_stops()
+        if self.state in _SOLID_STOP:
+            return QColor(stops[_SOLID_STOP[self.state]][1])
+        for (a0, c0), (a1, c1) in zip(stops, stops[1:], strict=False):
+            if at <= a1:
+                f = 0.0 if a1 == a0 else (at - a0) / (a1 - a0)
+                return QColor.fromRgbF(
+                    c0.redF() + (c1.redF() - c0.redF()) * f,
+                    c0.greenF() + (c1.greenF() - c0.greenF()) * f,
+                    c0.blueF() + (c1.blueF() - c0.blueF()) * f,
+                )
+        return QColor(stops[-1][1])
+
+    def _paint_end_cap(self, p: QPainter, rect: QRectF) -> None:
+        """A round end in the arc's own colour: near 12 o'clock the gradient wraps to jade."""
+        angle = math.radians(self.displayed * 360)
+        r = rect.width() / 2
+        end = QPointF(
+            rect.center().x() + r * math.sin(angle), rect.center().y() - r * math.cos(angle)
+        )
+        p.save()
+        p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(self.colour_at(self.displayed))
+        half = self.stroke / 2
+        p.drawEllipse(end, half, half)
+        p.restore()
 
     def _paint_text(self, p: QPainter) -> None:
         t = self.theme
