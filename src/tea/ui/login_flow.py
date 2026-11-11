@@ -8,7 +8,7 @@ Later or a 90-second timeout counts as dismissed. "Answer questions now" (tray o
 import random
 from collections.abc import Callable
 
-from PySide6.QtCore import QObject
+from PySide6.QtCore import QObject, Signal
 
 from tea.clock import Clock
 from tea.db.repos import Repos
@@ -25,6 +25,9 @@ MANUAL_FALLBACK_COUNT = 3
 
 
 class LoginFlow(QObject):
+    # "Answer questions now" found nothing to ask; the app shows strings.NO_QUESTIONS_LEFT.
+    nothing_to_ask = Signal()
+
     def __init__(
         self,
         theme: Theme,
@@ -46,6 +49,7 @@ class LoginFlow(QObject):
         self._reduce_motion = reduce_motion
         self._started = False
         self.popup: QuestionPopup | None = None
+        self._asked: set[int] = set()  # question ids already counted in this sitting
 
     def on_app_start(self) -> bool:
         """Show the login session if the rules allow. Returns whether a popup opened."""
@@ -62,12 +66,16 @@ class LoginFlow(QObject):
     def ask_now(self) -> bool:
         """The owner asked for questions: no cooldown, takes focus, no auto-close."""
         if self.popup is not None:
+            self.popup.make_manual()
             self.popup.show()
             self.popup.raise_()
             self.popup.activateWindow()
             return True
         count = self._settings().questions_per_login or MANUAL_FALLBACK_COUNT
-        return self._open(count, login=False)
+        if self._open(count, login=False):
+            return True
+        self.nothing_to_ask.emit()
+        return False
 
     def _open(self, count: int, *, login: bool) -> bool:
         now = self.clock.now()
@@ -88,6 +96,7 @@ class LoginFlow(QObject):
         )
         popup.finished.connect(self._on_finished)
         self.popup = popup
+        self._asked = set()
         log_event("login_questions_shown", count=len(chosen), manual=not login)
         popup.show()
         return True
@@ -96,15 +105,19 @@ class LoginFlow(QObject):
         qs.record_answer(
             self.repos, q, "login", text, skipped=skipped,
             week_start=week_start(self.clock.now()), blog_id=q.blog_id,
+            count_ask=q.id not in self._asked,
         )  # fmt: skip
+        self._asked.add(q.id)
 
     def _on_finished(self, reason: str) -> None:
-        now = self.clock.now()
-        if reason == DONE:
-            qs.note_completed(self.repos, now)
-        else:
-            qs.note_dismissed(self.repos, now, minutes=self._settings().dismiss_pause_minutes)
-        log_event("login_questions_closed", reason=reason)
         popup, self.popup = self.popup, None
+        login = popup is not None and popup.login
+        now = self.clock.now()
+        # Only a login popup touches the pause; the manual session is the owner's own.
+        if login and reason == DONE:
+            qs.note_completed(self.repos, now)
+        elif login:
+            qs.note_dismissed(self.repos, now, minutes=self._settings().dismiss_pause_minutes)
+        log_event("login_questions_closed", reason=reason, manual=not login)
         if popup is not None:
             popup.deleteLater()

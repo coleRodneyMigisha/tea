@@ -65,6 +65,9 @@ class TeaApp:
         tray = Tray(self.theme, settings, self.clock)
         tray.open_requested.connect(self.show_window)
         tray.answer_requested.connect(self.login.ask_now)
+        self.login.nothing_to_ask.connect(
+            lambda: tray.showMessage(strings.APP_NAME, strings.NO_QUESTIONS_LEFT)
+        )
         tray.new_blog_requested.connect(lambda: self.show_window("new_blog"))
         tray.pause_toggled.connect(self.window.set_paused)
         tray.quit_requested.connect(self.quit)

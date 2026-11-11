@@ -258,14 +258,19 @@ def record_answer(
     skipped: bool = False,
     week_start: date | None = None,
     blog_id: int | None = None,
+    count_ask: bool = True,
 ) -> Answer:
-    """Store an answer (or a skip, with no text) and count the question as asked."""
+    """Store an answer (or a skip, with no text) and count the question as asked.
+
+    Pass `count_ask=False` when the owner changes an answer in the same sitting (Back).
+    """
     with repos.transaction():
         answer = repos.answers.add(
             question.id, context, "" if skipped else text, skipped=skipped,
             week_start=week_start, blog_id=blog_id,
         )  # fmt: skip
-        repos.questions.mark_asked(question.id)
+        if count_ask:
+            repos.questions.mark_asked(question.id)
     return answer
 
 

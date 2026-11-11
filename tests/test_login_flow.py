@@ -200,3 +200,65 @@ def test_answers_persist_across_restart(
         assert not qs.login_allowed(again, clock.now())
     finally:
         conn2.close()
+
+
+def test_later_on_manual_session_sets_no_pause(
+    qtbot: QtBot, flow: Callable[..., LoginFlow], repos: Repos, clock: FakeClock
+) -> None:
+    f = flow()
+    assert f.ask_now()
+    _close(qtbot, f)
+    assert f.popup is not None
+    f.popup.later_button.click()
+    assert qs.login_allowed(repos, clock.now())
+    assert flow().on_app_start()
+
+
+def test_ask_now_with_nothing_to_ask_says_so(
+    qtbot: QtBot, theme: Theme, repos: Repos, clock: FakeClock
+) -> None:
+    for q in repos.questions.list():
+        repos.questions.set_active(q.id, False)
+    f = LoginFlow(theme, repos, clock, lambda: Settings(), rng=random.Random(0))
+    with qtbot.waitSignal(f.nothing_to_ask, timeout=500):
+        assert not f.ask_now()
+    assert f.popup is None
+
+
+def test_ask_now_turns_an_open_login_popup_manual(
+    qtbot: QtBot, flow: Callable[..., LoginFlow], repos: Repos, clock: FakeClock
+) -> None:
+    f = flow(timeout_ms=60)
+    f.on_app_start()
+    _close(qtbot, f)
+    popup = f.popup
+    assert popup is not None
+    f.ask_now()
+    qtbot.wait(200)
+    assert f.popup is popup and popup.isVisible() and not popup.login
+    assert not popup.testAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
+
+
+def test_changing_an_answer_via_back_counts_one_ask(
+    qtbot: QtBot, flow: Callable[..., LoginFlow], repos: Repos
+) -> None:
+    f = flow(Settings(questions_per_login=2))
+    f.on_app_start()
+    _close(qtbot, f)
+    popup = f.popup
+    assert popup is not None
+    first = popup.questions[0]
+    popup.skip_button.click()
+    popup.back_button.click()
+    popup.skip_button.click()  # unchanged: nothing saved
+    popup.back_button.click()
+    if first.kind == "text":
+        popup.text_edit.setPlainText("now answered")
+    elif first.kind == "choice":
+        popup.choice_buttons[0].click()
+    else:
+        popup.scale_buttons[0].click()
+    popup.next_button.click()
+    assert len([a for a in repos.answers.list() if a.question_id == first.id]) == 2
+    q = repos.questions.get(first.id)
+    assert q is not None and q.asked_count == 1
