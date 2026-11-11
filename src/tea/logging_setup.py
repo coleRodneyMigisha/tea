@@ -5,6 +5,7 @@ strings (kind, status, error class), and refuses anything that could be owner te
 """
 
 import logging
+import os
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -41,10 +42,17 @@ def _is_safe(key: str, value: object) -> bool:
 
 
 def log_event(event: str, level: int = logging.INFO, **fields: object) -> None:
-    """Log `event key=value ...`. Raises TypeError on values that could carry owner content."""
+    """Log `event key=value ...`, never owner content.
+
+    A field that could carry owner text is dropped and logged as `field_rejected=<key>`.
+    With TEA_DEBUG=1 it raises TypeError instead, so the mistake shows up in development.
+    """
     parts = [event]
     for key, value in fields.items():
-        if not _is_safe(key, value):
+        if _is_safe(key, value):
+            parts.append(f"{key}={value}")
+        elif os.environ.get("TEA_DEBUG") == "1":
             raise TypeError(f"log field {key!r} is not allowed (no owner content in logs)")
-        parts.append(f"{key}={value}")
+        else:
+            parts.append(f"field_rejected={key}")
     logging.getLogger(LOGGER_NAME).log(level, " ".join(parts))

@@ -82,7 +82,10 @@ def test_tea_now_bad_value_falls_back_to_real_time(monkeypatch: pytest.MonkeyPat
 
 
 def test_no_wall_clock_calls_outside_clock_module() -> None:
-    pattern = re.compile(r"\b(datetime\.now|datetime\.today|date\.today|datetime\.utcnow)\(")
+    # Any .now()/.today()/.utcnow() not called on a Clock, plus other wall-clock readers.
+    pattern = re.compile(
+        r"(?<!clock)\.(now|today|utcnow)\(|\btime\.time\(|\btime\.time_ns\(|fromtimestamp\("
+    )
     offenders = [
         f"{path.relative_to(SRC)}:{n}"
         for path in SRC.rglob("*.py")

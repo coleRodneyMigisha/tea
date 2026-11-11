@@ -44,7 +44,8 @@ def test_log_event_writes_names_and_ids() -> None:
     assert "blog_id=4" in line and "draft_id=9" in line and "kind=weekly" in line
 
 
-def test_log_event_refuses_free_text() -> None:
+def test_log_event_refuses_free_text_in_debug(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TEA_DEBUG", "1")
     with pytest.raises(TypeError):
         log_event("answer_saved", answer="I like short sentences")
     with pytest.raises(TypeError):
@@ -53,3 +54,13 @@ def test_log_event_refuses_free_text() -> None:
 
 def test_log_event_allows_error_class() -> None:
     log_event("import_failed", error="ValueError", handoff_id=1)
+
+
+def test_log_event_drops_free_text_in_normal_use() -> None:
+    path = setup_logging()
+    log_event("answer_saved", answer="I like short sentences", question_id=3)
+    for h in logging.getLogger("tea").handlers:
+        h.flush()
+    text = path.read_text()
+    assert "short sentences" not in text
+    assert "field_rejected=answer" in text and "question_id=3" in text

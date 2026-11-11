@@ -127,3 +127,12 @@ def test_top_level_must_be_object() -> None:
 def test_save_leaves_no_temp_files() -> None:
     save(Settings())
     assert [p.name for p in config.config_dir().iterdir()] == ["settings.json"]
+
+
+def test_broken_seed_file_rejected(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    (tmp_path / "data").mkdir(exist_ok=True)
+    (tmp_path / "data" / "interests.json").write_text("{oops")
+    monkeypatch.setattr(config, "resource_dir", lambda name: tmp_path / name)
+    with pytest.raises(SettingsError) as err:
+        load()
+    assert "interests.json" in str(err.value)

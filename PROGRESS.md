@@ -5,7 +5,7 @@ Updated by the coding agent at the end of every milestone. A fresh session reads
 | Milestone | Status | Commit | Notes (what was verified, what was not) |
 |---|---|---|---|
 | M0 Scaffold | done | b27ecf9 | Clean clone: `make setup && make test && make lint` pass (7 tests); `--help` lists all section 12 commands (test_cli); CI YAML parses, runs lint+test (not run on GitHub yet); test_no_network passes. Unverified: CI on GitHub. |
-| M1 Data layer | done | (see git log) | 135 tests pass, `make lint` clean, `make run` starts. AC1 test_db_schema (idempotent, matches DATA_MODEL.sql incl. indexes); AC2 test_repos, 100% line coverage of tea.db (unique bank_key, (blog_id,version), jobs PK; cascades; draft delete nulls handoff.draft_id); AC3 test_weeks (year ends, leap year, London DST weeks 167/169 h); AC4 test_settings round trip + first-run seed; AC5 test_clock grep. Wheel contents checked by `pip wheel` listing. Unverified: `pipx install` from the wheel end to end; TEA_NOW by hand. |
+| M1 Data layer | done | 0b4dbba | 137 tests pass, `make lint` clean, `make run` starts. AC1 test_db_schema (idempotent, matches DATA_MODEL.sql incl. indexes); AC2 test_repos, 100% line coverage of tea.db (unique bank_key, (blog_id,version), jobs PK; cascades; draft delete nulls handoff.draft_id); AC3 test_weeks (year ends, leap year, London DST weeks 167/169 h); AC4 test_settings round trip + first-run seed; AC5 test_clock grep. Wheel contents checked by `pip wheel` listing. Unverified: `pipx install` from the wheel end to end; TEA_NOW by hand. |
 | M2 Hand-off core | not started | | |
 | M3 Theme, shell and snapshot tool | not started | | |
 | M4 Question system | not started | | |

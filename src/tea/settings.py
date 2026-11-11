@@ -84,7 +84,13 @@ def _describe(err: ValidationError) -> str:
 
 
 def _seed() -> Settings:
-    seed = json.loads((config.resource_dir("data") / "interests.json").read_text())
+    path = config.resource_dir("data") / "interests.json"
+    try:
+        seed: Any = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise SettingsError(f"{path.name} could not be read: {exc}") from exc
+    if not isinstance(seed, dict):
+        raise SettingsError(f"{path.name} must hold a JSON object")
     return Settings(interests=list(seed.get("interests", [])), region=seed.get("region", ""))
 
 
@@ -93,7 +99,10 @@ def load(path: Path | None = None) -> Settings:
     path = path or config.settings_path()
     if not path.exists():
         settings = _seed()
-        save(settings, path)
+        try:
+            save(settings, path)
+        except OSError as exc:
+            raise SettingsError(f"{path.name} could not be written: {exc}") from exc
         return settings
     try:
         raw: Any = json.loads(path.read_text(encoding="utf-8"))
