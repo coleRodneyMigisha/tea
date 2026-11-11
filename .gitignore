@@ -12,3 +12,4 @@ build/
 tea.db
 tea.db-*
 .snapshots/
+.coverage

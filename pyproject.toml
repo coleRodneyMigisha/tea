@@ -24,6 +24,11 @@ tea = "tea.__main__:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/tea"]
 
+# data/ and prompts/ live at the repo root; installed copies carry them inside the package.
+[tool.hatch.build.targets.wheel.force-include]
+"data" = "tea/data"
+"prompts" = "tea/prompts"
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"
