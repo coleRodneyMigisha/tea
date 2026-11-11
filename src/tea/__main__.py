@@ -49,6 +49,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         from tea.app import run_app
 
         return run_app(background=args.background)
+    if args.command == "login-questions":
+        from tea.app import run_app
+
+        # Asks a running tea over IPC, or starts one in the tray with the popup open.
+        return run_app(background=True, ask_questions=True)
     print(f"{args.command}: not implemented yet")
     return 0
 

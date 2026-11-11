@@ -8,8 +8,9 @@ from PySide6.QtWidgets import QApplication
 from pytestqt.qtbot import QtBot
 
 from tea import settings as settings_mod
-from tea.app import TeaApp
+from tea.app import MSG_QUESTIONS, TeaApp
 from tea.single_instance import SingleInstance
+from tea.ui.widgets.question_popup import QuestionPopup
 
 
 @pytest.fixture
@@ -24,12 +25,52 @@ def instance(tmp_path: Path) -> Iterator[SingleInstance]:
 def restore_quit_flag(qapp: QApplication) -> Iterator[None]:
     yield
     qapp.setQuitOnLastWindowClosed(True)
+    for widget in qapp.topLevelWidgets():
+        if isinstance(widget, QuestionPopup):
+            widget.close()
+            widget.deleteLater()
 
 
 def _make(qapp: QApplication, qtbot: QtBot, instance: SingleInstance, tray: bool) -> TeaApp:
     tea = TeaApp(qapp, instance, tray_available=tray)
     qtbot.addWidget(tea.window)
     return tea
+
+
+def test_start_seeds_the_bank_and_shows_login_questions(
+    qapp: QApplication, qtbot: QtBot, instance: SingleInstance
+) -> None:
+    tea = _make(qapp, qtbot, instance, tray=False)
+    assert len(tea.repos.questions.list(origin="bank")) > 30
+    tea.start(background=True)
+    popup = tea.login.popup
+    assert popup is not None and popup.isVisible() and popup.login
+    assert popup.progress_text() == "Question 1 of 3"
+    tea.close()
+
+
+def test_tray_answer_now_opens_a_focused_popup(
+    qapp: QApplication, qtbot: QtBot, instance: SingleInstance
+) -> None:
+    tea = _make(qapp, qtbot, instance, tray=True)
+    assert tea.tray is not None
+    tea.login.on_app_start()
+    assert tea.login.popup is not None
+    tea.login.popup.later_button.click()  # dismissed: the cooldown starts
+    tea.tray.answer_action.trigger()
+    popup = tea.login.popup
+    assert popup is not None and popup.isVisible() and not popup.login
+    tea.tray.hide()
+    tea.close()
+
+
+def test_ipc_login_questions_opens_the_popup(
+    qapp: QApplication, qtbot: QtBot, instance: SingleInstance
+) -> None:
+    tea = _make(qapp, qtbot, instance, tray=False)
+    instance.message.emit(MSG_QUESTIONS)
+    assert tea.login.popup is not None and not tea.login.popup.login
+    tea.close()
 
 
 def test_with_tray_close_hides_and_app_keeps_running(
