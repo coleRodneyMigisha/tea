@@ -1,0 +1,1 @@
+"""Steep ring progress widget."""
