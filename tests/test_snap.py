@@ -29,6 +29,9 @@ def test_all_writes_a_png_per_screen_and_theme(tmp_path: Path) -> None:
             assert path.is_file(), path
             image = QImage(str(path))
             assert (image.width(), image.height()) == (1120, 740)
+    for name in ("question_popup", "answers_preview"):
+        assert list(tmp_path.glob(f"{name}-*-light.png")), name
+        assert list(tmp_path.glob(f"{name}-*-dark.png")), name
 
 
 def test_single_screen_with_scale(tmp_path: Path) -> None:

@@ -18,15 +18,19 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 from zoneinfo import ZoneInfo
 
 from tea.clock import Clock, FakeClock
 from tea.db.repos import Repos
+from tea.devtools import snap_widgets
 
 SNAP_TIME = datetime(2026, 11, 11, 10, 0, tzinfo=ZoneInfo("Africa/Kampala"))  # a Wednesday
 THEMES = ("light", "dark")
 
 Seed = Callable[[Repos, Clock], None]
+# Builds a standalone widget (popup, dialog) instead of showing a main-window screen.
+Build = Callable[[Any, Repos, Clock], Any]
 
 
 @dataclass(frozen=True)
@@ -36,6 +40,7 @@ class State:
     screen: str
     seed: Seed | None = None
     settings: dict[str, object] = field(default_factory=dict)
+    build: Build | None = None
 
 
 REGISTRY: dict[str, dict[str, State]] = {}
@@ -48,6 +53,7 @@ def register(screen: str, state: str, spec: State) -> None:
 for _screen in ("this_week", "new_blog", "drafts", "settings"):
     register(_screen, "empty", State(_screen))
 register("this_week", "paused", State("this_week", settings={"pause_automation": True}))
+snap_widgets.register_all(register, State)
 
 
 def _isolate() -> tempfile.TemporaryDirectory[str]:
@@ -69,7 +75,6 @@ def render(screen: str, state: str, theme_name: str, scale: float, out: Path) ->
     """Render one snapshot. Needs a QApplication (see `main`)."""
     from PySide6.QtWidgets import QApplication
 
-    from tea import config
     from tea.db.connection import open_db
     from tea.settings import Settings
     from tea.ui.main_window import MainWindow
@@ -77,28 +82,38 @@ def render(screen: str, state: str, theme_name: str, scale: float, out: Path) ->
 
     spec = REGISTRY[screen][state]
     clock = FakeClock(SNAP_TIME)
-    if spec.seed is not None:
-        conn = open_db(config.db_path())
-        try:
-            spec.seed(Repos(conn, clock), clock)
-        finally:
-            conn.close()
-    app = QApplication.instance()
-    assert isinstance(app, QApplication)
-    theme = Theme(app, appearance=theme_name, scale=scale)
-    theme.apply()
-    settings = Settings.model_validate(spec.settings)
-    window = MainWindow(theme, settings, save_settings=lambda _s: None, remember_geometry=False)
-    window.show_screen(spec.screen)
-    window.show()
-    app.processEvents()
-    focused = app.focusWidget()
-    if focused is not None:
-        focused.clearFocus()  # at-rest look; focus rings get their own states later
-    app.processEvents()
+    db_dir = tempfile.TemporaryDirectory(prefix="tea-snap-db-")  # a fresh database per render
+    conn = open_db(Path(db_dir.name) / "tea.db")
+    try:
+        repos = Repos(conn, clock)
+        if spec.seed is not None:
+            spec.seed(repos, clock)
+        app = QApplication.instance()
+        assert isinstance(app, QApplication)
+        theme = Theme(app, appearance=theme_name, scale=scale)
+        theme.apply()
+        if spec.build is not None:
+            window = spec.build(theme, repos, clock)
+        else:
+            settings = Settings.model_validate(spec.settings)
+            window = MainWindow(
+                theme, settings, save_settings=lambda _s: None, remember_geometry=False
+            )
+            window.show_screen(spec.screen)
+        window.show()
+        for _ in range(3):
+            app.processEvents()
+        focused = app.focusWidget()
+        if focused is not None:
+            focused.clearFocus()  # at-rest look; focus rings get their own states later
+        app.processEvents()
+        image = snap_widgets.grab_on_background(window, theme)
+    finally:
+        conn.close()
+        db_dir.cleanup()
     out.mkdir(parents=True, exist_ok=True)
     path = out / _file_name(screen, state, theme_name, scale)
-    if not window.grab().save(str(path), "PNG"):
+    if not image.save(str(path), "PNG"):
         raise OSError(f"could not write {path}")
     window.close()
     window.deleteLater()
