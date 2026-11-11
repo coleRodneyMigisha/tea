@@ -6,14 +6,15 @@ A bad reply never raises: it is stored with warnings. Only a missing hand-off or
 import logging
 import time
 from dataclasses import asdict, dataclass
+from datetime import date
 
 from tea.db.repos import Repos
 from tea.db.rows import Draft
 from tea.handoff.parse import ParsedReply, parse
+from tea.ui.strings import UNTITLED_DRAFT
 
 log = logging.getLogger(__name__)
 
-UNTITLED = "Untitled draft"
 NO_TOPIC = "no_topic"  # pick mode, but the reply named no <topic>: the owner types it (SPEC 3.3)
 
 
@@ -37,6 +38,14 @@ def _draft_kind(handoff_kind: str, has_drafts: bool) -> str:
     return "regenerated" if has_drafts else "new"
 
 
+def _pick_applies(repos: Repos, status: str, week: date | None) -> bool:
+    """Never overwrite a focus the owner set, nor apply a superseded pick hand-off (SPEC 4.1)."""
+    if status == "superseded":
+        return False
+    w = repos.weeks.get(week) if week is not None else None
+    return w is None or w.focus_text is None or w.topic_origin == "auto_trending"
+
+
 def import_reply(repos: Repos, handoff_id: int, text: str) -> ImportResult:
     started = time.monotonic()
     handoff = repos.handoffs.get(handoff_id)
@@ -51,7 +60,7 @@ def import_reply(repos: Repos, handoff_id: int, text: str) -> ImportResult:
     pick = handoff.kind == "weekly_pick"
     if pick and not parsed.topic:
         warnings.append(NO_TOPIC)
-    title = parsed.title or blog.title or UNTITLED
+    title = parsed.title or blog.title or UNTITLED_DRAFT
 
     with repos.transaction():
         kind = _draft_kind(handoff.kind, repos.drafts.latest_for_blog(blog.id) is not None)
@@ -69,7 +78,7 @@ def import_reply(repos: Repos, handoff_id: int, text: str) -> ImportResult:
             parse_warnings=warnings,
         )
         fields: dict[str, str] = {"status": "ready"}
-        if pick:
+        if pick and _pick_applies(repos, handoff.status, handoff.week_start):
             if parsed.title:
                 fields["title"] = parsed.title
             if parsed.topic:

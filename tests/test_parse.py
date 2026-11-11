@@ -214,3 +214,20 @@ def test_bad_types_and_garbage_never_raise() -> None:
         text = "".join(rng.choice(pieces) for _ in range(rng.randint(0, 40)))
         assert isinstance(parse(text), ParsedReply)
     assert isinstance(parse(None), ParsedReply)  # type: ignore[arg-type]
+
+
+def test_unnumbered_candidate_starting_with_digits() -> None:
+    r = parse("<topic_candidates>\n2026 AI rules | angle | why | http://x\n</topic_candidates>")
+    c = r.candidates[0]
+    assert (c.n, c.topic, c.angle, c.why, c.urls) == (
+        1,
+        "2026 AI rules",
+        "angle",
+        "why",
+        ["http://x"],
+    )
+
+
+def test_draft_that_is_only_a_code_block_keeps_its_fence() -> None:
+    r = parse("<draft>\n```python\nx = 1\n```\n</draft>")
+    assert r.draft_markdown == "```python\nx = 1\n```"

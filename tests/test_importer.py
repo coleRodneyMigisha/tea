@@ -166,3 +166,24 @@ def test_untitled_fallback(repos: Repos) -> None:
 def test_unknown_handoff_raises_lookup_error(repos: Repos) -> None:
     with pytest.raises(LookupError):
         import_reply(repos, 999, WELL_FORMED["weekly"])
+
+
+def test_pick_import_keeps_a_focus_the_owner_set(repos: Repos, blog_id: int) -> None:
+    hid = _handoff(repos, "weekly_pick", blog_id)  # WEEK already has the owner's focus
+    result = import_reply(repos, hid, WELL_FORMED["weekly_pick"])
+    week = repos.weeks.get(WEEK)
+    assert week is not None
+    assert (week.focus_text, week.topic_origin, week.trend_candidates) == ("Focus", "owner", None)
+    b = repos.blogs.get(blog_id)
+    assert b is not None and (b.topic, b.topic_origin, b.status) == ("Focus", "owner", "ready")
+    assert result.draft.version == 1
+
+
+def test_superseded_pick_handoff_does_not_set_focus(repos: Repos) -> None:
+    blog = repos.blogs.create("", "", "weekly")
+    repos.weeks.set_pick_mode(WEEK, True)
+    hid = _handoff(repos, "weekly_pick", blog.id)
+    repos.handoffs.mark_superseded(hid)
+    import_reply(repos, hid, WELL_FORMED["weekly_pick"])
+    week = repos.weeks.get(WEEK)
+    assert week is not None and week.focus_text is None

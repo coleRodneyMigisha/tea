@@ -56,6 +56,13 @@ def test_packet_pick_and_improve(replies: Path) -> None:
     assert "Most specs I wrote" not in improve.stdout  # this week's focus answer
 
 
+def test_new_packet_supersedes_open_handoffs_for_the_week(replies: Path, tmp_dirs: Path) -> None:
+    assert _run("tea", "packet").returncode == 0
+    assert _run("tea", "packet", "--kind", "weekly_pick").returncode == 0
+    rows = _db(tmp_dirs).execute("SELECT id, status FROM handoffs ORDER BY id").fetchall()
+    assert [tuple(r) for r in rows] == [(1, "superseded"), (2, "prompt_ready")]
+
+
 def test_packet_default_kind_is_weekly(replies: Path) -> None:
     out = _run("tea", "packet")
     assert out.returncode == 0 and "<topic_pick>" not in out.stdout
@@ -73,7 +80,11 @@ def test_packet_rejects_bad_week(replies: Path) -> None:
 
 
 def test_import_reply_round_trip(replies: Path, tmp_dirs: Path) -> None:
-    assert _run("tea", "packet", "--kind", "weekly_pick").returncode == 0
+    # Thursday with no focus: the week is in pick mode, so `tea packet` picks weekly_pick.
+    with _db(tmp_dirs) as db:
+        db.execute("UPDATE weeks SET focus_text = NULL, pick_mode = 1 WHERE blog_id = 1")
+    packet = _run("tea", "packet")
+    assert packet.returncode == 0 and "weekly_pick" in packet.stderr
     out = _run("tea", "import-reply", str(replies / "reply_weekly_pick.txt"))
     assert out.returncode == 0, out.stderr
     assert "version 1" in out.stdout and "What the new phone repair rules" in out.stdout
@@ -85,7 +96,7 @@ def test_import_reply_round_trip(replies: Path, tmp_dirs: Path) -> None:
 
 def test_import_reply_reports_warnings(replies: Path) -> None:
     assert _run("tea", "packet").returncode == 0
-    out = _run("tea", "import-reply", str(replies / "malformed_truncated.txt"), "--handoff", "1")
+    out = _run("tea", "import-reply", str(replies / "malformed_truncated.txt"))
     assert out.returncode == 0, out.stderr
     assert "truncated:verification" in out.stdout
 

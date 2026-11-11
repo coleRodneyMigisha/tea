@@ -52,6 +52,8 @@ def run_packet(args: argparse.Namespace, clock: Clock | None = None) -> int:
             packet = packets.build(kind, repos, conf, clock, blog_id=blog_id, week=week)
         except packets.PacketError as exc:
             return _fail(str(exc))
+        for old in repos.handoffs.list(open_only=True, blog_id=packet.blog_id, week_start=week):
+            repos.handoffs.mark_superseded(old.id)
         handoff = repos.handoffs.create(
             kind,
             packet.text,
@@ -75,7 +77,7 @@ def _default_kind(repos: Repos, week: date) -> str:
 def run_import(args: argparse.Namespace, clock: Clock | None = None) -> int:
     clock = clock or SystemClock()
     try:
-        with open(args.file, encoding="utf-8", errors="replace") as fh:
+        with open(args.file, encoding="utf-8", errors="replace", newline="") as fh:
             text = fh.read()
     except OSError as exc:
         return _fail(f"could not read {args.file}: {exc.strerror}")

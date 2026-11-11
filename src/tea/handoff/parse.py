@@ -96,7 +96,7 @@ def _parse(text: str, raw: object) -> ParsedReply:
 
     draft = found.get("draft")
     if draft is not None:
-        out.draft_markdown = _unfence(draft.content) or None
+        out.draft_markdown = _undraft_fence(draft.content) or None
     else:
         out.warnings.append("no_draft_tag")
         out.draft_markdown = _untagged_draft(text, sections) or None
@@ -175,6 +175,12 @@ def _unfence(text: str) -> str:
     return "\n".join(lines).strip()
 
 
+def _undraft_fence(content: str) -> str:
+    """Unwrap a fence around the whole draft, but keep a draft that is only a code block."""
+    unwrapped = _unfence(content)
+    return unwrapped if _H1.search(unwrapped) else content.strip()
+
+
 def _untagged_draft(text: str, sections: list[_Section]) -> str:
     """The whole reply minus the recognised sections, any wrapping fence and a preamble line."""
     parts, pos = [], 0
@@ -238,9 +244,9 @@ def _candidates(content: str) -> list[TopicCandidate]:
         parts = _fields(line) if "|" in line else [_BULLET.sub("", line)]
         if parts[0].lower() in ("n", "#"):
             continue
-        digits = re.match(r"\d+", parts[0])
-        if digits and len(parts) > 1:
-            n, parts = int(digits.group()), parts[1:]
+        digits = re.fullmatch(r"(\d+)[.)]?", parts[0])
+        if digits and (len(parts) >= 5 or len(parts) > 1 and "|" in line and _numbered(parts)):
+            n, parts = int(digits.group(1)), parts[1:]
         else:
             n = index
         if len(parts) > 4:
@@ -249,6 +255,11 @@ def _candidates(content: str) -> list[TopicCandidate]:
         urls = [u for u in re.split(r"[;,\s]+", parts[3]) if u]
         out.append(TopicCandidate(n, parts[0], parts[1], parts[2], urls))
     return out
+
+
+def _numbered(parts: list[str]) -> bool:
+    """A short row like "3 | topic | angle": a bare number with no URL in the last field."""
+    return len(parts) < 5 and "://" not in parts[-1]
 
 
 def _sources(content: str) -> list[SourceRef]:
