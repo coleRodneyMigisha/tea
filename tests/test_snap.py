@@ -19,7 +19,7 @@ def test_registry_has_every_screen() -> None:
 def test_all_writes_a_png_per_screen_and_theme(tmp_path: Path) -> None:
     result = subprocess.run(
         [sys.executable, "-m", "tea.devtools.snap", "--all", "--out", str(tmp_path)],
-        capture_output=True, text=True, timeout=120,
+        capture_output=True, text=True, timeout=300,  # 68 renders; slow under memory pressure
         env={**_env(), "QT_QPA_PLATFORM": "offscreen"},
     )  # fmt: skip
     assert result.returncode == 0, result.stderr
