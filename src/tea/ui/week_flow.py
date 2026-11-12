@@ -55,6 +55,7 @@ class WeekFlow(QObject):
         self.screen = screen
         self.login = login
         self.dialog: FocusDialog | None = None
+        self.handoff_open: Callable[[], bool] = lambda: False  # set by the app (HandoffFlow)
         self._login_waiting = False
         if reduce_motion is not None:
             screen.ring.reduce_motion = reduce_motion
@@ -98,7 +99,7 @@ class WeekFlow(QObject):
         return self.dialog is not None
 
     def handoff_dialog_open(self) -> bool:
-        return False  # the hand-off dialog arrives in M7
+        return self.handoff_open()
 
     def state_changed(self) -> None:
         self.refresh()

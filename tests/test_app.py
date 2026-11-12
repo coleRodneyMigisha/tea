@@ -191,3 +191,62 @@ def test_start_sweeps_copies_cut_off_by_a_crash(
     tea.start(background=True)
     assert not stale.part.exists()
     tea.close()
+
+
+# M7: the hand-off dialog and the draft view are reached from everywhere
+
+
+def _weekly(tea: TeaApp) -> int:
+    from tea.domain import weekly
+    from tea.settings import Settings
+
+    week = START.date()
+    weekly.save_focus(tea.repos, Settings(), tea.clock, week, "Small teams")
+    return weekly.prepare_packet(tea.repos, Settings(), tea.clock, "weekly", week).id
+
+
+def test_notification_action_opens_the_handoff_dialog(
+    qapp: QApplication, qtbot: QtBot, instance: SingleInstance
+) -> None:
+    tea = _make(qapp, qtbot, instance, tray=False)
+    hid = _weekly(tea)
+    assert not tea.week.handoff_dialog_open()
+    tea._on_notification_action(f"handoff:{hid}")
+    assert hid in tea.handoffs.dialogs and tea.handoffs.dialogs[hid].isVisible()
+    assert tea.week.handoff_dialog_open()
+    tea.handoffs.close_all()
+    tea.close()
+
+
+def test_ring_and_tray_open_the_handoff_dialog(
+    qapp: QApplication, qtbot: QtBot, instance: SingleInstance
+) -> None:
+    tea = _make(qapp, qtbot, instance, tray=True)
+    hid = _weekly(tea)
+    tea.week.open_handoff.emit(hid)
+    assert hid in tea.handoffs.dialogs
+    tea.handoffs.close_all()
+    qtbot.waitUntil(lambda: not tea.handoffs.dialogs)
+    assert tea.tray is not None
+    tea.tray.open_handoff_requested.emit()
+    assert hid in tea.handoffs.dialogs
+    tea.handoffs.close_all()
+    tea.close()
+
+
+def test_import_then_open_draft_shows_the_drafts_screen(
+    qapp: QApplication, qtbot: QtBot, instance: SingleInstance
+) -> None:
+    from tea.devtools import sample_replies
+
+    tea = _make(qapp, qtbot, instance, tray=False)
+    hid = _weekly(tea)
+    tea.week.open_handoff.emit(hid)
+    dialog = tea.handoffs.dialogs[hid]
+    dialog.copy_button.click()
+    dialog.paste_box.setPlainText(sample_replies.WEEKLY)
+    dialog.import_button.click()
+    dialog.open_draft_button.click()
+    assert tea.window.current_screen() == "drafts"
+    assert tea.drafts.view.title_label.text().startswith("Small teams need fewer documents")
+    tea.close()
