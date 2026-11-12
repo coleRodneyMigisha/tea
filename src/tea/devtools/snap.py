@@ -23,7 +23,7 @@ from zoneinfo import ZoneInfo
 
 from tea.clock import Clock, FakeClock
 from tea.db.repos import Repos
-from tea.devtools import snap_drafts, snap_dropzone, snap_week, snap_widgets
+from tea.devtools import snap_drafts, snap_dropzone, snap_new_blog, snap_week, snap_widgets
 
 SNAP_TIME = datetime(2026, 11, 11, 10, 0, tzinfo=ZoneInfo("Africa/Kampala"))  # a Wednesday
 THEMES = ("light", "dark")
@@ -58,6 +58,7 @@ snap_widgets.register_all(register, State)
 snap_dropzone.register_all(register, State)
 snap_week.register_all(register, State)  # replaces the M3 this_week empty and paused states
 snap_drafts.register_all(register, State)
+snap_new_blog.register_all(register, State)  # replaces the M3 new_blog empty state
 
 
 def _isolate() -> tempfile.TemporaryDirectory[str]:
