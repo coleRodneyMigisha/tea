@@ -6,6 +6,7 @@ thread when a copy finishes, so workers never touch SQLite. tea never opens the 
 
 from pathlib import Path
 
+import shiboken6
 from PySide6.QtCore import Qt, QUrl, Signal
 from PySide6.QtGui import QDesktopServices, QDragEnterEvent, QDragLeaveEvent, QDropEvent
 from PySide6.QtWidgets import (
@@ -109,6 +110,18 @@ class Dropzone(QWidget):
         folder_row.addStretch(1)
         layout.addLayout(folder_row)
         self.refresh()
+        # A copy that outlives the widget is cancelled; its closures check `_alive()`.
+        jobs = self.copy_rows
+
+        def cancel_jobs() -> None:
+            for entry in jobs:
+                if entry.job is not None:
+                    entry.job.cancel()
+
+        self.destroyed.connect(cancel_jobs)
+
+    def _alive(self) -> bool:
+        return shiboken6.isValid(self)
 
     # -- state ----------------------------------------------------------------------------
 
@@ -153,8 +166,10 @@ class Dropzone(QWidget):
         name.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
         row.addWidget(name)
         chip = Chip(strings.NOT_LISTED, "not_listed")
-        chip.setVisible(not att.include_in_list)
         row.addWidget(chip)
+        # Only after it has a parent: a parentless visible chip flashes up as its own
+        # window and takes focus from the dropzone.
+        chip.setVisible(not att.include_in_list)
         row.addStretch(1)
         size = _label(format_size(att.size_bytes), role="muted")
         size.setWordWrap(False)
@@ -175,17 +190,24 @@ class Dropzone(QWidget):
         self.add_paths([Path(p) for p in paths])
 
     def add_paths(self, paths: list[Path]) -> None:
-        self._set_error("")
+        messages: list[str] = []
         for path in paths:
             if not path.is_file():
                 continue  # folders and vanished files are skipped
-            message = attachments.check(self.repos, self.blog_id, path, pending=len(self.copy_rows))
-            if message is not None:
-                self._set_error(message)
-                if message == strings.TOO_MANY_FILES:
-                    break
-                continue
-            self._start_copy(path)
+            try:
+                message = attachments.check(
+                    self.repos, self.blog_id, path, pending=len(self.copy_rows)
+                )
+                if message is None:
+                    self._start_copy(path)
+            except OSError as exc:
+                log_event("attachment_copy_failed", blog_id=self.blog_id, error=type(exc).__name__)
+                message = strings.COPY_FAILED.format(name=path.name)
+            if message is not None and message not in messages:
+                messages.append(message)
+            if message == strings.TOO_MANY_FILES:
+                break
+        self._set_error("\n".join(messages))
 
     def copy_row(self, name: str, size_bytes: int, visible: bool = True) -> CopyRow:
         """A progress row for a copy in flight (also used by the snapshot tool)."""
@@ -205,6 +227,11 @@ class Dropzone(QWidget):
         size.setWordWrap(False)
         line.addWidget(size)
         cancel = _button(strings.CANCEL_COPY)
+        # As wide as Leave out plus Remove, so the size lines up with the file rows.
+        probe = _button(strings.REMOVE_FILE)
+        leave_width = _widest(probe, (strings.LEAVE_OUT, strings.INCLUDE_FILE))
+        cancel.setMinimumWidth(leave_width + line.spacing() + probe.sizeHint().width())
+        probe.deleteLater()
         line.addWidget(cancel)
         entry = CopyRow(widget, label, size, bar, cancel)
         self.copy_rows.append(entry)
@@ -214,20 +241,24 @@ class Dropzone(QWidget):
         return entry
 
     def _start_copy(self, path: Path) -> None:
+        size_bytes = path.stat().st_size  # before reserving, so a vanished file leaks nothing
         target = attachments.reserve(self.blog_id, path.name)
-        size_bytes = path.stat().st_size
         big = size_bytes >= config.SHOW_COPY_PROGRESS_BYTES
         entry = self.copy_row(target.final.name, size_bytes, visible=big)
         bar, cancel = entry.bar, entry.cancel_button
 
         def progress(done: int, total: int) -> None:
+            if not self._alive():
+                return
             bar.setValue(round(PROGRESS_STEPS * done / total) if total else PROGRESS_STEPS)
 
         def finished(size: object) -> None:
-            self._drop_copy(entry)
             assert isinstance(size, int)
             attachments.record(self.repos, self.blog_id, target, size)
             log_event("attachment_added", blog_id=self.blog_id, size=size)
+            if not self._alive():
+                return  # stored and listed; the next dropzone for this blog shows it
+            self._drop_copy(entry)
             if attachments.notice_due(self.repos):
                 attachments.notice_shown(self.repos)
                 self.notice.setVisible(True)
@@ -235,13 +266,18 @@ class Dropzone(QWidget):
             self.changed.emit()
 
         def failed(exc: BaseException) -> None:
-            self._drop_copy(entry)
             attachments.release(target)
             if isinstance(exc, attachments.CopyCancelled):
                 log_event("attachment_copy_cancelled", blog_id=self.blog_id)
+            else:
+                log_event("attachment_copy_failed", blog_id=self.blog_id, error=type(exc).__name__)
+            if not self._alive():
                 return
-            log_event("attachment_copy_failed", blog_id=self.blog_id, error=type(exc).__name__)
-            self._set_error(strings.COPY_FAILED.format(name=path.name))
+            self._drop_copy(entry)
+            if isinstance(exc, attachments.AttachmentLimitError):
+                self._set_error(exc.message)
+            elif not isinstance(exc, attachments.CopyCancelled):
+                self._set_error(strings.COPY_FAILED.format(name=path.name))
 
         entry.job = workers.run(
             attachments.copy_file, path, target,

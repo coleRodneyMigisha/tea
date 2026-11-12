@@ -292,17 +292,22 @@ def test_tab_order_follows_the_screen(
 def test_keyboard_focus_survives_leave_out_and_remove(
     qtbot: QtBot, theme: Theme, repos: Repos, blog: int, tmp_path: Path
 ) -> None:
-    for name in ("a.pdf", "b.pdf"):
+    for name in ("a.pdf", "b.pdf", "c.pdf"):
         attachments.add(repos, blog, _file(tmp_path, name))
     dz = make(qtbot, theme, repos, blog)
     dz.activateWindow()
     qtbot.waitUntil(lambda: QApplication.activeWindow() is dz, timeout=3000)
     dz.rows[0].leave_button.setFocus()
-    dz.rows[0].leave_button.click()
-    assert dz.rows[0].leave_button.hasFocus()
+    dz.rows[0].leave_button.click()  # builds a "Not listed" row
+    qtbot.wait(50)  # let any stray window show and steal activation
+    assert QApplication.activeWindow() is dz and dz.rows[0].leave_button.hasFocus()
     dz.rows[0].remove_button.click()
+    qtbot.wait(50)
     assert dz.rows[0].remove_button.hasFocus() and dz.rows[0].name.text() == "b.pdf"
+    dz.rows[1].leave_button.click()
     dz.rows[0].remove_button.click()
+    dz.rows[0].remove_button.click()
+    qtbot.wait(50)
     assert dz.choose_button.hasFocus()
 
 
@@ -328,3 +333,78 @@ def test_drop_area_keeps_its_height_when_a_message_shows(
     dz.adjustSize()
     assert dz.area.height() == before
     assert dz.error_icon.isVisible()
+
+
+def test_several_rejections_are_all_shown(
+    qtbot: QtBot, theme: Theme, repos: Repos, blog: int, tmp_path: Path
+) -> None:
+    dz = make(qtbot, theme, repos, blog)
+    a = _file(tmp_path, "a.pdf", 51 * MB, sparse=True)
+    b = _file(tmp_path, "b.pdf", 51 * MB, sparse=True)
+    dz.add_paths([a, b])
+    assert dz.error.text() == "\n".join(
+        strings.FILE_TOO_LARGE.format(name=n) for n in ("a.pdf", "b.pdf")
+    )
+
+
+def test_file_system_errors_show_copy_failed(
+    qtbot: QtBot, theme: Theme, repos: Repos, blog: int, tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:  # fmt: skip
+    def broken(blog_id: int, name: str) -> object:
+        raise OSError(36, "File name too long")
+
+    monkeypatch.setattr(attachments, "reserve", broken)
+    dz = make(qtbot, theme, repos, blog)
+    dz.add_paths([_file(tmp_path, "a.pdf")])
+    assert dz.error.text() == strings.COPY_FAILED.format(name="a.pdf")
+    assert not dz.copying()
+
+
+def test_long_file_name_is_added(
+    qtbot: QtBot, theme: Theme, repos: Repos, blog: int, tmp_path: Path
+) -> None:
+    dz = make(qtbot, theme, repos, blog)
+    dz.add_paths([_file(tmp_path, "n" * 252 + ".a")])
+    _settle(qtbot, dz)
+    assert len(dz.rows) == 1 and not dz.error.isVisible()
+
+
+def test_closing_mid_copy_cancels_and_leaves_nothing(
+    qtbot: QtBot, theme: Theme, repos: Repos, blog: int, tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:  # fmt: skip
+    import threading
+
+    gate = threading.Event()
+    real = attachments.copy_file
+
+    def slow(*args: object, **kw: object) -> int:
+        assert gate.wait(10)
+        return real(*args, **kw)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(attachments, "copy_file", slow)
+    dz = Dropzone(theme, repos, blog)
+    dz.show()
+    dz.add_paths([_file(tmp_path, "big.bin", 10 * MB)])
+    job = dz.copy_rows[0].job
+    assert job is not None
+    dz.deleteLater()
+    qtbot.waitUntil(lambda: job.is_cancelled(), timeout=5000)
+    gate.set()
+    qtbot.waitUntil(lambda: job.finished, timeout=10000)
+    assert not any(attachments.blog_dir(blog).iterdir())
+    assert repos.attachments.count_for_blog(blog) == 0
+
+
+def test_copy_finishing_after_close_is_still_recorded(
+    qtbot: QtBot, theme: Theme, repos: Repos, blog: int, tmp_path: Path
+) -> None:
+    dz = Dropzone(theme, repos, blog)
+    dz.add_paths([_file(tmp_path, "a.pdf")])
+    job = dz.copy_rows[0].job
+    assert job is not None
+    workers.pool().waitForDone(5000)  # the copy ends before the widget goes away
+    dz.deleteLater()
+    qtbot.waitUntil(lambda: job.finished, timeout=5000)
+    assert repos.attachments.count_for_blog(blog) == 1
