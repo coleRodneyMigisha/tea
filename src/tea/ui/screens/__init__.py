@@ -1,7 +1,7 @@
 """Main window screens and the shared page scaffold."""
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QLabel, QLayout, QPushButton, QVBoxLayout, QWidget
 
 from tea.ui.theme import Theme
 
@@ -41,3 +41,21 @@ def muted(text: str, role: str = "muted") -> QLabel:
     label.setWordWrap(True)
     label.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
     return label
+
+
+def clear_layout(layout: QLayout, keep: int = 0) -> None:
+    """Remove and delete every item after the first `keep`."""
+    while layout.count() > keep:
+        item = layout.takeAt(keep)
+        widget = item.widget() if item is not None else None
+        if widget is not None:
+            widget.hide()  # deleteLater waits for the event loop; until then it would show
+            widget.deleteLater()
+
+
+def button(text: str, variant: str | None = None) -> QPushButton:
+    """A push button; `variant` is "primary", "quiet" or "danger" (QSS)."""
+    b = QPushButton(text)
+    if variant:
+        b.setProperty("variant", variant)
+    return b

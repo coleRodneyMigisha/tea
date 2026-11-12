@@ -134,3 +134,22 @@ QFrame#DropArea[drag="true"] QLabel, QFrame#DropArea[drag="true"] QPushButton#Dr
 QLabel[role="error"] { color: {{attention}}; }
 QProgressBar { background: {{line}}; border: none; border-radius: 3px; max-height: 6px; min-height: 6px; }
 QProgressBar::chunk { background: {{primary}}; border-radius: 3px; }
+
+/* Hand-off dialog (UI_DESIGN 3.5) */
+QLabel#StepMarker { border: 1.5px solid {{line}}; border-radius: 12px; color: {{muted}}; font-weight: 600; font-size: {{px_caption}}px; background: transparent; }
+QLabel#StepMarker[done="true"] { border-color: {{primary}}; background: {{primary_soft}}; }
+QFrame#ImportNotes { background: {{surface}}; border: 1px solid {{line}}; border-left: 3px solid {{amber}}; border-radius: {{r_control}}px; }
+QLabel#Toast { background: {{ink}}; color: {{bg}}; border-radius: {{r_control}}px; padding: 8px 14px; font-weight: 500; }
+QLabel#Chip[state="version"] { background: transparent; color: {{ink}}; border-color: {{line}}; }
+
+/* Drafts (UI_DESIGN 3.3) */
+QListWidget#DraftsList { background: {{surface}}; border: 1px solid {{line}}; border-radius: {{r_panel}}px; padding: 6px 0; }
+QListWidget#DraftsList::item { padding: 0; margin: 1px 6px; }
+QLabel#GroupHeading { color: {{muted}}; font-size: {{px_caption}}px; font-weight: 600; padding: 10px 12px 2px 12px; }
+QWidget#DraftRow { background: transparent; }
+QScrollArea#CheckDrawer { background: {{surface}}; border: 1px solid {{line}}; border-radius: {{r_panel}}px; }
+QWidget#DrawerBody, QScrollArea#CheckDrawer > QWidget#qt_scrollarea_viewport { background: transparent; }
+QFrame#ClaimRow { background: transparent; border: 2px solid transparent; border-radius: {{r_control}}px; }
+QFrame#ClaimRow:hover { background: {{primary_soft}}; }
+QFrame#ClaimRow:focus { border: 2px solid {{focus_ring}}; }
+QTextBrowser[reading="true"] { background: {{surface}}; border: 1px solid {{line}}; border-radius: {{r_panel}}px; }

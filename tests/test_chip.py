@@ -24,7 +24,7 @@ def test_owner_mapping() -> None:
     assert CHIP_ICONS == {
         "scoping": "edit", "prompt": "clock", "ready": "check", "carried": "chevron",
         "posted": "external-link", "shelved": "pause", "pick": "week", "failed": "cross",
-        "not_listed": "weak",
+        "not_listed": "weak", "version": "drafts",
     }  # fmt: skip
     icons = config.resource_dir("assets") / "icons"
     assert all((icons / f"{name}.svg").is_file() for name in CHIP_ICONS.values())

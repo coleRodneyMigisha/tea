@@ -21,6 +21,7 @@ CHIP_ICONS = {
     "pick": "week",
     "failed": "cross",
     "not_listed": "weak",
+    "version": "drafts",  # version kind in the draft view's picker (M7, DEVIATIONS)
 }
 
 
@@ -28,16 +29,26 @@ class Chip(QLabel):
     def __init__(self, theme: Theme, text: str, state: str) -> None:
         super().__init__(text)
         self.setObjectName("Chip")
-        self.setProperty("state", state)
-        self.setAccessibleName(text)
+        self.theme = theme
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
         self._radius = -1
-        # Drawn in ink, then recolored to the text color at paint time.
-        self._icon = QIcon(str(theme.icon_path(CHIP_ICONS[state], "ink")))
+        self._icon = QIcon()
+        self.set_state(text, state)
         self._icon_px = theme.type_px("caption")
         self._gap = theme.space(0)
         self.setContentsMargins(self._icon_px + self._gap, 0, 0, 0)
+
+    def set_state(self, text: str, state: str) -> None:
+        """Change the text and state in place (the QSS state rule and the icon follow)."""
+        self.setText(text)
+        self.setAccessibleName(text)
+        self.setProperty("state", state)
+        # Drawn in ink, then recolored to the text color at paint time.
+        self._icon = QIcon(str(self.theme.icon_path(CHIP_ICONS[state], "ink")))
+        self.style().unpolish(self)
+        self.style().polish(self)
+        self.update()
 
     def icon_rect(self) -> QRect:
         """Where the icon is drawn: just left of the text, centred on it."""

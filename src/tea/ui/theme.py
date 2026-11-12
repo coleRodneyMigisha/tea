@@ -45,6 +45,14 @@ _EXTRA_PX = {
     # Steep ring (UI_DESIGN 3.1): 240 x 240, 14 px track and arc.
     "ring": 240,
     "ring_stroke": 14,
+    # Hand-off dialog (UI_DESIGN 3.5): 680 wide.
+    "handoff_dialog_width": 680,
+    # Drafts (UI_DESIGN 3.3): list 300 (narrows first, down to 180), drawer 320, and the
+    # reading column never narrower than 280, so all three fit the default 1120 window.
+    "drafts_list": 300,
+    "drafts_list_min": 180,
+    "drawer_width": 320,
+    "reading_min": 280,
 }
 # Fractional line widths from UI_DESIGN, drawn with QPainter: the dropzone's dashed border.
 _EXTRA_STROKE = {"dropzone_border": 1.5}
@@ -294,6 +302,14 @@ class Theme(QObject):
             if key in group:
                 return self.px(group[key])
         raise KeyError(key)
+
+    def reading_measure(self) -> int:
+        """The reading column's maximum width (`reading_measure_px`), scaled."""
+        return self.px(self.tokens["reading_measure_px"])
+
+    def line_height(self, kind: str) -> float:
+        """A line-height factor from the tokens (`ui` 1.45, `reading` 1.65)."""
+        return float(self.tokens["line_height"][kind])
 
     def stroke(self, key: str) -> float:
         """A painter line width by key, scaled but not rounded (1.5 px stays 1.5)."""

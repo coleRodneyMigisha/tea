@@ -171,3 +171,109 @@ SHOW_IN_FOLDER = "Show in folder"
 CANCEL_COPY = "Cancel"
 SIZE_MB = "{n} MB"
 SIZE_KB = "{n} KB"
+
+# Hand-off dialog (UI_DESIGN 3.5, SPEC 3)
+HANDOFF_TITLES = {
+    "weekly": "Write this week's draft",
+    "weekly_pick": "Write this week's draft",
+    "manual": "Write your draft",
+    "improve": "Improve last week's draft",
+    "audit": "Check this draft",
+}
+STEP_COPY = "Copy the prompt"
+STEP_OPEN = "Open Claude"
+STEP_PASTE = "Paste Claude's reply"
+STEP_DONE = "Done"
+PROMPT_WORDS = "{words} words"
+COPY_PROMPT = "Copy prompt"
+VIEW_PROMPT = "View prompt"
+VIEW_PROMPT_TITLE = "The prompt"
+OPEN_CLAUDE = "Open Claude"
+PASTE_FROM_CLIPBOARD = "Paste from clipboard"
+PASTE_SAMPLE = "Paste sample reply"
+IMPORT_DRAFT = "Import draft"
+PASTE_DIFFERENT = "Paste a different reply"
+PASTE_ACCESSIBLE = "Claude's reply"
+PASTE_PLACEHOLDER = "Paste the whole reply here, tags and all."
+CLAUDE_PICKED = "Claude picked: {topic}"
+COPY_AUDIT_PROMPT = "Copy a prompt asking Claude to add it"
+COPY_CONTINUE_PROMPT = 'Copy a "continue" prompt'
+PICK_TOPIC_PLACEHOLDER = "The topic Claude chose"
+SAVE_TOPIC = "Save topic"
+CLOSE = "Close"
+
+# Drafts (UI_DESIGN 3.3)
+GROUP_WAITING = "Waiting for Claude"
+GROUP_READY = "Ready"
+GROUP_CARRIED = "Carried over"
+GROUP_POSTED = "Posted"
+GROUP_SHELVED = "Shelved"
+CHIP_PROMPT_READY = "Prompt ready"
+CHIP_READY = "Ready"
+CHIP_CARRIED = "Carried over"
+CHIP_POSTED = "Posted"
+CHIP_SHELVED = "Shelved"
+DRAFTS_LIST = "Drafts and prompts"
+DRAFT_META = "{when} - {words} words - {minutes} min read"
+WAITING_SINCE = "Prompt prepared {when}"
+COPY_FOR_MEDIUM = "Copy for Medium"
+COPY_MARKDOWN = "Copy Markdown"
+MARKDOWN_COPIED = "Markdown copied"
+EDIT = "Edit"
+PREVIEW = "Preview"
+REGENERATE = "Regenerate"
+MORE = "More"
+SECOND_PASS = "Second-pass check"
+MARK_POSTED = "Mark as posted"
+SHELVE = "Shelve"
+REVIVE = "Revive"
+EXPORT_MD = "Export .md"
+EXPORT_TITLE = "Export draft"
+EXPORT_FILTER = "Markdown (*.md)"
+EXPORT_FAILED = "tea couldn't save {name}. Choose another folder and try again."
+DELETE = "Delete"
+DELETE_TITLE = "Delete this version?"
+DELETE_BODY = "Version {n} of {title} is removed for good. Other versions are kept."
+DELETE_LAST_BODY = (
+    "{title} has no other versions, so it moves to Shelved with nothing to show."
+    " This can't be undone."
+)
+EDITED_NOTE = "Edited. The imported draft is kept."
+EDITED_MARKER = "Edited"
+VERSION_LABEL = "Version {n}"
+VERSION_ENTRY = "Version {n} ({kind})"
+VERSION_ENTRY_EDITED = "Version {n} ({kind}, edited)"
+VERSION_KINDS = {
+    "new": "New",
+    "improved": "Improved",
+    "regenerated": "Regenerated",
+    "checked": "Checked",
+}
+DRAWER_TOGGLE = "Check before posting"
+DRAWER_CHECKLIST = "Checklist"
+CHECK_OWN_WORDS = "I've edited this in my own words"
+CHECK_CLAIMS = "I've checked the flagged claims"
+DRAWER_CHANGES = "What changed"
+DRAWER_CLAIMS = "Claims"
+VERDICTS = {"supported": "Supported", "weak": "Weak", "unsupported": "Unsupported"}
+CLAIM_ACCESSIBLE = "{verdict}: {claim}. Press Enter to find it in the draft."
+DRAWER_SOURCES = "Sources"
+DRAWER_FLAGS = "Notes from Claude"
+DRAWER_IMPORT_NOTES = "Import notes"
+DRAWER_MEDIUM = "Medium formatting"
+MEDIUM_OK = "Nothing here that Medium can't show."
+MEDIUM_WARNINGS = {
+    "table": "Medium has no tables. tea pastes each table row as a line of text.",
+    "deep_heading": "Medium has two heading sizes. Smaller headings are pasted as subheadings.",
+    "extra_h1": "Medium takes one title. Later top-level headings are pasted as headings.",
+    "nested_list": "Medium can't nest lists. Nested items are pasted into the main list.",
+    "raw_html": "Medium ignores HTML in a draft. tea leaves it out when copying.",
+    "image": "tea leaves images out when copying. Add them in Medium.",
+}
+IMPORT_SUMMARY_ONE = "Imported {title}: {words} words, 1 claim to check."
+HANDOFF_GONE = "This prompt's blog was deleted, so there is nothing to import into."
+MONTH_SHORT = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+DATE_SHORT = "{day} {month}"
+DATE_YEAR = "{day} {month} {year}"
+CANCEL = "Cancel"
+OPEN_HANDOFF_PANE = "Open hand-off"
