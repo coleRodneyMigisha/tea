@@ -40,10 +40,14 @@ _EXTRA_PX = {
     "popup_shadow_y": 8,
     # Answers preview dialog: the same width as the focus dialog.
     "dialog_width": 520,
+    # New blog form (UI_DESIGN 3.2): a single panel, max width 720.
+    "form_max_width": 720,
     # Steep ring (UI_DESIGN 3.1): 240 x 240, 14 px track and arc.
     "ring": 240,
     "ring_stroke": 14,
 }
+# Fractional line widths from UI_DESIGN, drawn with QPainter: the dropzone's dashed border.
+_EXTRA_STROKE = {"dropzone_border": 1.5}
 # Type sizes UI_DESIGN names that the token type scale lacks: the ring's centre text.
 _EXTRA_TYPE_PX = {"ring_centre": 28}
 _RGBA = re.compile(r"rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)")
@@ -290,6 +294,14 @@ class Theme(QObject):
             if key in group:
                 return self.px(group[key])
         raise KeyError(key)
+
+    def stroke(self, key: str) -> float:
+        """A painter line width by key, scaled but not rounded (1.5 px stays 1.5)."""
+        return _EXTRA_STROKE[key] * self.scale
+
+    def radius(self, key: str) -> int:
+        """A corner radius from the tokens (`control`, `panel`, `popup`), scaled."""
+        return self.px(self.tokens["radius_px"][key])
 
     def space(self, step: int) -> int:
         """Spacing scale step: 0 is 4 px, 1 is 8 px, up to 6 (48 px)."""
