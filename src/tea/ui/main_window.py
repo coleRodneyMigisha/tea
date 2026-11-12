@@ -64,10 +64,11 @@ class MainWindow(QMainWindow):
         self.stack = QStackedWidget()
         self.stack.setObjectName("Content")
         self.week_screen = ThisWeekScreen(theme, reduce_motion=settings.reduce_motion)
+        self.drafts_screen = DraftsScreen(theme)
         self.screens: dict[str, QWidget] = {
             "this_week": self.week_screen,
             "new_blog": NewBlogScreen(theme),
-            "drafts": DraftsScreen(theme),
+            "drafts": self.drafts_screen,
             "settings": SettingsScreen(theme),
         }
         for name in SCREEN_NAMES:
