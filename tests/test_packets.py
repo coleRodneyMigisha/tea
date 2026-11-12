@@ -1,6 +1,7 @@
 """handoff/packets: each kind renders cleanly; optional blocks follow the rules."""
 
 import re
+from pathlib import Path
 
 import pytest
 
@@ -140,6 +141,28 @@ def test_attachments_block_only_with_included_files(
     p = _build("manual", repos, settings, clock, ids)
     assert "<attached_files>" not in p.text and p.attachments == []
     assert "attachments" not in p.prompt_versions
+
+
+def test_left_out_files_never_reach_the_packet(
+    repos: Repos, settings: Settings, clock: FakeClock, tmp_path: Path
+) -> None:
+    from tea.domain import attachments
+
+    blog = repos.blogs.create("Tea", "Tea", "manual", allowed_sources=["own_documents"])
+    src = tmp_path / "src"
+    src.mkdir()
+    added = []
+    for name in ("keep-one.pdf", "skip-me.docx", "keep-two.txt", "notes.docx", "notes.docx"):
+        path = src / name
+        path.write_bytes(b"x")
+        added.append(attachments.add(repos, blog.id, path))
+    attachments.set_included(repos, added[1].id, False)
+    attachments.set_included(repos, added[3].id, False)
+    p = packets.build("manual", repos, settings, clock, blog_id=blog.id)
+    assert [a.filename for a in p.attachments] == ["keep-one.pdf", "keep-two.txt", "notes (2).docx"]
+    assert "- keep-one.pdf\n- keep-two.txt\n- notes (2).docx" in p.text
+    assert "skip-me" not in p.text
+    assert "- notes.docx" not in p.text
 
 
 def test_brief(repos: Repos, settings: Settings, clock: FakeClock, ids: SampleIds) -> None:

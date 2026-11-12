@@ -15,6 +15,8 @@ APP_NAME = "tea"
 # Attachments (DECISIONS D4)
 MAX_ATTACHMENT_BYTES = 50 * 1024 * 1024
 MAX_ATTACHMENTS_PER_BLOG = 20
+# Smaller copies finish too fast for a progress bar to mean anything (UI_DESIGN 3.2).
+SHOW_COPY_PROGRESS_BYTES = 8 * 1024 * 1024
 
 # Scheduling (SPEC 4, 4.3)
 REMINDER_PAUSE = timedelta(hours=2)
