@@ -314,3 +314,19 @@ def test_reading_pane_uses_reading_font_and_line_height(
     block = doc.begin().next()  # first paragraph after the title
     assert block.blockFormat().lineHeight() == 165
     assert doc.begin().blockFormat().headingLevel() == 1
+
+
+def test_refresh_keeps_scroll_and_highlight(world: World, repos: Repos, clock: FakeClock) -> None:
+    """The scheduler refreshes the list every minute; the reader must not jump."""
+    _ready(world, repos, clock)
+    v = world.view
+    row = v.drawer.claim_rows[-1]
+    row.clicked.emit(row.claim)
+    highlighted = len(v.reader.extraSelections())
+    v.reader.verticalScrollBar().setValue(v.reader.verticalScrollBar().maximum())
+    pos = v.reader.verticalScrollBar().value()
+    drawer_rows = list(v.drawer.claim_rows)
+    world.flow.refresh()
+    assert v.reader.verticalScrollBar().value() == pos
+    assert len(v.reader.extraSelections()) == highlighted
+    assert v.drawer.claim_rows == drawer_rows

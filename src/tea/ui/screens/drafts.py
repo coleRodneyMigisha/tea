@@ -73,14 +73,12 @@ class DraftRow(QWidget):
         self.title = ElidedLabel(entry.title)
         self.title.setProperty("role", "strong")
         col.addWidget(self.title)
-        line = QHBoxLayout()
-        line.setSpacing(theme.space(1))
+        # Date and chip on their own lines, so neither is cut when the list narrows.
         when = ElidedLabel(entry.when)
         when.setProperty("role", "caption")
-        line.addWidget(when, 1)
+        col.addWidget(when)
         self.chip = Chip(theme, entry.chip_text, entry.chip_state)
-        line.addWidget(self.chip)
-        col.addLayout(line)
+        col.addWidget(self.chip, 0, Qt.AlignmentFlag.AlignLeft)
         self.setAccessibleName(f"{entry.title}, {entry.chip_text}, {entry.when}")
 
 
@@ -166,6 +164,7 @@ class DraftsScreen(QWidget):
         outer.addWidget(self.stack, 1)
         self.draft_view: QWidget | None = None
         self._entries: dict[tuple[str, int], Entry] = {}
+        self._groups: list[Group] = []
 
     def set_draft_view(self, view: QWidget) -> None:
         self.draft_view = view
@@ -175,6 +174,10 @@ class DraftsScreen(QWidget):
         return self.stack.currentIndex() == 0
 
     def set_groups(self, groups: list[Group]) -> None:
+        if groups == self._groups and self._entries:
+            self._reselect()
+            return
+        self._groups = groups
         current = self.current_key()
         self.list.blockSignals(True)
         self.list.clear()
@@ -205,6 +208,12 @@ class DraftsScreen(QWidget):
             self.select(*next(iter(self._entries)))
         else:
             self.panes.setCurrentWidget(self.blank)
+
+    def _reselect(self) -> None:
+        """Same list: tell the view to refresh its current entry without rebuilding."""
+        key = self.current_key()
+        if key is not None:
+            self.selected.emit(*key)
 
     def group_names(self) -> list[str]:
         names = []

@@ -93,6 +93,28 @@ class HandoffFlow(QObject):
         for dialog in list(self.dialogs.values()):
             dialog.close()
 
+    def sweep_superseded(self) -> None:
+        """Move open dialogs off hand-offs that were superseded (a focus change rebuilt the
+        prompt), so a reply is never imported into the old one. Pasted text comes along."""
+        for hid in list(self.dialogs):
+            h = self.repos.handoffs.get(hid)
+            if h is not None and h.status != "superseded":
+                continue
+            newer = (
+                self.repos.handoffs.list(open_only=True, blog_id=h.blog_id)
+                if h is not None and h.blog_id is not None
+                else []
+            )
+            if not newer:
+                self.dialogs[hid].close()
+                continue
+            new_id = newer[-1].id
+            if self._pasted.get(hid) and not self._pasted.get(new_id):
+                self._pasted[new_id] = self._pasted[hid]
+            if hid in self._opened:
+                self._opened.add(new_id)
+            self._switch(hid, new_id)
+
     # New hand-offs started by the owner
 
     def regenerate(self, blog_id: int) -> HandoffDialog | None:

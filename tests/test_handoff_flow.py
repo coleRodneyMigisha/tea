@@ -155,3 +155,23 @@ def test_debug_follows_tea_debug(
     flow.close_all()
     monkeypatch.delenv("TEA_DEBUG")
     assert not HandoffFlow(theme, repos, clock, Settings).debug
+
+
+def test_open_dialog_follows_a_rebuilt_prompt(
+    qtbot: QtBot, flow: HandoffFlow, repos: Repos, clock: FakeClock
+) -> None:
+    """A focus change supersedes the open hand-off: its dialog moves to the new one."""
+    from handoff_world import WEEK
+
+    from tea.domain import weekly
+
+    h = weekly_handoff(repos, clock)
+    d = flow.open(h.id)
+    assert d is not None
+    d.paste_box.setPlainText("typed so far")
+    repos.handoffs.mark_superseded(h.id)
+    new = weekly.prepare_packet(repos, Settings(), clock, "weekly", WEEK)
+    flow.sweep_superseded()
+    qtbot.waitUntil(lambda: h.id not in flow.dialogs)
+    assert new.id in flow.dialogs and flow.dialogs[new.id].isVisible()
+    assert flow.dialogs[new.id].paste_box.toPlainText() == "typed so far"

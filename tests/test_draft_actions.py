@@ -224,3 +224,19 @@ def test_continue_prompt_is_the_prompt_file() -> None:
     text = drafts.continue_prompt()
     assert "cut off" in text and "closing tag" in text
     assert "{{" not in text
+
+
+@pytest.mark.parametrize(
+    ("flag", "shown"),
+    [
+        ("I couldn't search the web in this chat.", True),
+        ("I was unable to browse, so I used your files.", True),
+        ("No web access was available.", True),
+        ("No claims needed a web search.", False),
+        ("Searched three sources; no issues.", False),
+    ],
+)
+def test_could_not_search_detection(flag: str, shown: bool) -> None:
+    from tea.ui import import_notes
+
+    assert import_notes.claude_could_not_search([flag]) is shown

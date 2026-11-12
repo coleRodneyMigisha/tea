@@ -13,6 +13,7 @@ from PySide6.QtCore import QTimer, QUrl, Signal
 from PySide6.QtGui import QDesktopServices, QShowEvent
 from PySide6.QtWidgets import (
     QDialog,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QPlainTextEdit,
@@ -121,19 +122,20 @@ class HandoffDialog(QDialog):
             if h.blog_id is not None
             else []
         )
-        for a in files:
-            row = QHBoxLayout()
-            row.setSpacing(self.theme.space(2))
+        grid = QGridLayout()  # names in one column, the buttons lined up beside them
+        grid.setHorizontalSpacing(self.theme.space(2))
+        grid.setVerticalSpacing(0)
+        for i, a in enumerate(files):
             name = QLabel(a.filename)
             self._file_labels.append(name)
-            row.addWidget(name)
+            grid.addWidget(name, i, 0)
             show = button(strings.SHOW_IN_FOLDER, "quiet")
             show.setAccessibleName(f"{strings.SHOW_IN_FOLDER}: {a.filename}")
             show.clicked.connect(lambda _=False, b=a.blog_id: self._show_folder(b))
             self.folder_buttons.append(show)
-            row.addWidget(show)
-            row.addStretch(1)
-            self.step1.body.addLayout(row)
+            grid.addWidget(show, i, 1)
+        grid.setColumnStretch(2, 1)
+        self.step1.body.addLayout(grid)
         self.attach_label.setVisible(bool(files))
         outer.addWidget(self.step1)
 
@@ -181,7 +183,10 @@ class HandoffDialog(QDialog):
         outer.addWidget(self.step3)
 
     def _build_summary(self) -> None:
-        self.summary = ImportSummary(self.theme)
+        t = self.theme
+        # Step body width: dialog minus its margins, the step marker and the grid gap.
+        width = t.size("handoff_dialog_width") - 2 * t.space(5) - t.space(4) - t.space(3)
+        self.summary = ImportSummary(t, width)
         sm = self.summary
         self.summary_label, self.picked_label, self.notes_frame = (
             sm.summary_label,

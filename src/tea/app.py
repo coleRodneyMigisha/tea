@@ -105,6 +105,8 @@ class TeaApp:
         week.focus_saved.connect(runner.run_now)
         week.prompt_rebuilt.connect(self._announce_rebuilt)
         runner.ran.connect(self.drafts.refresh)
+        runner.ran.connect(self.handoffs.sweep_superseded)
+        week.prompt_rebuilt.connect(lambda _hid: self.handoffs.sweep_superseded())
         week.open_handoff.connect(self.handoffs.open)
         week.open_draft.connect(self.open_draft)
         handoffs = self.handoffs

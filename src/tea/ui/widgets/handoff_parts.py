@@ -101,8 +101,12 @@ class PromptViewer(QDialog):
 class ImportSummary(QWidget):
     """After import: the summary line, Claude's pick, import notes and recovery buttons."""
 
-    def __init__(self, theme: Theme) -> None:
+    def __init__(self, theme: Theme, text_width: int) -> None:
         super().__init__()
+        # Wrapped labels in a fixed-width dialog are given their wrapped height up front:
+        # height-for-width does not survive the nested layouts, and notes were clipped.
+        self._text_width = text_width
+        self._note_width = text_width - 2 * theme.space(3) - theme.space(1)
         col = QVBoxLayout(self)
         col.setContentsMargins(0, 0, 0, 0)
         col.setSpacing(theme.space(2))
@@ -154,12 +158,16 @@ class ImportSummary(QWidget):
 
     def show_draft(self, draft: Draft, kind: str, topic: str) -> None:
         self.summary_label.setText(summary_text(draft))
+        _fit_height(self.summary_label, self._text_width)
         self.picked_label.setText(strings.CLAUDE_PICKED.format(topic=topic))
+        _fit_height(self.picked_label, self._text_width)
         self.picked_label.setVisible(kind == "weekly_pick" and bool(topic))
         found = import_notes.notes(draft.parse_warnings, draft.flags)
         clear_layout(self._notes_box)
         for line in found.lines:
-            self._notes_box.addWidget(muted(line, "body"))
+            label = muted(line, "body")
+            _fit_height(label, self._note_width)
+            self._notes_box.addWidget(label)
         need_topic = import_notes.TOPIC in found.recoveries and not topic
         self.audit_button.setVisible(import_notes.AUDIT in found.recoveries)
         self.continue_button.setVisible(import_notes.CONTINUE in found.recoveries)
@@ -189,6 +197,11 @@ class ImportSummary(QWidget):
 
     def _topic_changed(self, text: str) -> None:
         self.topic_save_button.setEnabled(bool(text.strip()))
+
+
+def _fit_height(label: QLabel, width: int) -> None:
+    label.ensurePolished()
+    label.setMinimumHeight(label.heightForWidth(width))
 
 
 def flagged_claims(draft: Draft) -> int:

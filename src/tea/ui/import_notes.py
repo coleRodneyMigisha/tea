@@ -16,8 +16,9 @@ TOPIC = "topic"  # type the topic Claude chose (pick mode)
 
 # A flag saying Claude could not search, for example "I couldn't search the web".
 _NO_SEARCH = re.compile(
-    r"\b(could ?n[o']?t|can ?n[o']?t|unable to|was not able to|wasn't able to|no)\b"
-    r"[^.]{0,40}\b(search|brows|web access|internet)",
+    r"\b(could ?n[o']?t|can ?n[o']?t|unable to|was not able to|wasn't able to)\b"
+    r"[^.]{0,40}\b(search|brows|web access|internet)"
+    r"|\bno (web|internet) access\b|\bwithout (web|internet) access\b",
     re.IGNORECASE,
 )
 

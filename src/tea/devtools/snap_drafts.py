@@ -35,6 +35,11 @@ def _handoff(repos: Repos, clock: Clock, kind: str = "weekly", files: bool = Fal
     if files:
         blog = weekly.week_blog(repos, WEEK)
         assert blog is not None
+        import shutil
+
+        # Each render has a fresh database but the same data folder: start empty, or the
+        # copies of earlier renders turn the names into "notes (7).docx".
+        shutil.rmtree(attachments.blog_dir(blog.id), ignore_errors=True)
         folder = attachments.blog_dir(blog.id).parent / "snap-sources"
         folder.mkdir(parents=True, exist_ok=True)
         for name in ("report-2025.pdf", "notes.docx"):

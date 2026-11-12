@@ -52,6 +52,7 @@ class DraftView(QWidget):
         self.draft: Draft | None = None
         self.versions: list[Draft] = []
         self._latest_id: int | None = None
+        self._rendered: tuple[int, str, tuple[str, ...]] | None = None
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(theme.space(2))
@@ -194,12 +195,17 @@ class DraftView(QWidget):
         self._fill_versions()
         self.edited_note.setVisible(d.edited_markdown is not None)
         body = drafts.current_text(d)
+        # The list refreshes every minute; re-render only when the text changed, so the
+        # reader keeps its scroll and claim highlight and the drawer its scroll.
+        key = (d.id, body, tuple(d.parse_warnings))
         if self.editing():
             if self.editor.text() != body and not self.editor.pending():
                 self.editor.load(body)
-        else:
+        elif key != self._rendered:
             self.reader.set_markdown(body)
-        self.drawer.set_draft(d, medium.warnings(body))
+        if key != self._rendered:
+            self.drawer.set_draft(d, medium.warnings(body))
+            self._rendered = key
         posted, shelved = blog.status == "posted", blog.status == "shelved"
         self.posted_action.setVisible(not posted)
         self.shelve_action.setVisible(not shelved and not posted)
@@ -272,6 +278,7 @@ class DraftView(QWidget):
             self.editor.flush()
             self.stack.setCurrentWidget(self.reader)
             self.edit_button.setText(strings.EDIT)
+            self._rendered = None  # the reader shows the text from before editing
             self._reload()
         else:
             self.editor.load(drafts.current_text(self.draft))
