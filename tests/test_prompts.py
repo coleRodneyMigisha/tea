@@ -11,6 +11,7 @@ NAMES = [
     "packet_draft",
     "packet_improve",
     "packet_audit",
+    "continue",
     "blocks/attachments",
     "blocks/pick_topic",
     "blocks/research_on",

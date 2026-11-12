@@ -38,7 +38,7 @@ def _draft_kind(handoff_kind: str, has_drafts: bool) -> str:
     return "regenerated" if has_drafts else "new"
 
 
-def _pick_applies(repos: Repos, status: str, week: date | None) -> bool:
+def pick_applies(repos: Repos, status: str, week: date | None) -> bool:
     """Never overwrite a focus the owner set, nor apply a superseded pick hand-off (SPEC 4.1)."""
     if status == "superseded":
         return False
@@ -78,7 +78,7 @@ def import_reply(repos: Repos, handoff_id: int, text: str) -> ImportResult:
             parse_warnings=warnings,
         )
         fields: dict[str, str] = {"status": "ready"}
-        if pick and _pick_applies(repos, handoff.status, handoff.week_start):
+        if pick and pick_applies(repos, handoff.status, handoff.week_start):
             if parsed.title:
                 fields["title"] = parsed.title
             if parsed.topic:

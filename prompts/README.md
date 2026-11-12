@@ -33,6 +33,7 @@ followed by the prompt text. `tea.handoff.prompts` renders `{{variables}}`, rais
 | `packet_draft.md` | `weekly`, `weekly_pick`, `manual` |
 | `packet_improve.md` | `improve` |
 | `packet_audit.md` | `audit` |
+| `continue.md` | not a hand-off: copied from the hand-off dialog when a reply was cut off (owner approved, M7) |
 | `blocks/pick_topic.md` | pick-mode section inside `packet_draft.md` |
 | `blocks/research_on.md`, `blocks/research_off.md` | research section |
 | `blocks/attachments.md` | attached-files section |
