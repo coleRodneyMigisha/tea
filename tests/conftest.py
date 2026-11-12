@@ -1,5 +1,6 @@
 """Shared fixtures: every test gets its own data, config and state folders."""
 
+import contextlib
 from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
@@ -53,3 +54,23 @@ def conn(db_path: Path) -> Iterator[Connection]:
 @pytest.fixture
 def repos(conn: Connection, clock: FakeClock) -> Repos:
     return Repos(conn, clock)
+
+
+@pytest.fixture(autouse=True)
+def no_leftover_popups() -> Iterator[None]:
+    """A question popup left open by a test keeps its 90 s timeout; firing in a later test,
+    it would record the dismissal on a database that test already closed."""
+    yield
+    from PySide6.QtWidgets import QApplication
+
+    app = QApplication.instance()
+    if not isinstance(app, QApplication):
+        return
+    from tea.ui.widgets.question_popup import QuestionPopup
+
+    for widget in app.topLevelWidgets():
+        if isinstance(widget, QuestionPopup):
+            with contextlib.suppress(RuntimeError, TypeError):
+                widget.finished.disconnect()
+            widget.close()
+            widget.deleteLater()
