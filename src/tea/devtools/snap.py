@@ -23,7 +23,7 @@ from zoneinfo import ZoneInfo
 
 from tea.clock import Clock, FakeClock
 from tea.db.repos import Repos
-from tea.devtools import snap_week, snap_widgets
+from tea.devtools import snap_dropzone, snap_week, snap_widgets
 
 SNAP_TIME = datetime(2026, 11, 11, 10, 0, tzinfo=ZoneInfo("Africa/Kampala"))  # a Wednesday
 THEMES = ("light", "dark")
@@ -55,6 +55,7 @@ for _screen in ("this_week", "new_blog", "drafts", "settings"):
     register(_screen, "empty", State(_screen))
 register("this_week", "paused", State("this_week", settings={"pause_automation": True}))
 snap_widgets.register_all(register, State)
+snap_dropzone.register_all(register, State)
 snap_week.register_all(register, State)  # replaces the M3 this_week empty and paused states
 
 
