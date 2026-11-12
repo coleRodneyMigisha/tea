@@ -2,10 +2,11 @@
 
 Answers are handed to `save(question, text, skipped)` one at a time, on Next and Skip, so
 Later or a crash keeps everything answered so far. `finished` says how the popup closed.
+A resumed session passes `start` and stored `answered` values (real numbering, Back works).
 """
 
 import math
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 
 from PySide6.QtCore import QEvent, QObject, QPoint, QPointF, Qt, QTimer, QVariantAnimation, Signal
 from PySide6.QtGui import QGuiApplication, QKeyEvent, QMouseEvent, QShowEvent
@@ -76,6 +77,8 @@ class QuestionPopup(QWidget):
         login: bool,
         reduce_motion: bool = False,
         timeout_ms: int = LOGIN_TIMEOUT_MS,
+        start: int = 0,
+        answered: Mapping[int, tuple[str, bool]] | None = None,
     ) -> None:
         flags = (
             Qt.WindowType.Tool
@@ -86,10 +89,14 @@ class QuestionPopup(QWidget):
         self.theme = theme
         self.questions = list(questions)
         self.login = login
-        self.index = 0
+        self.index = min(max(start, 0), len(self.questions) - 1)
         self._save = save
         self._drafts: dict[int, str] = {}
         self._saved: dict[int, tuple[str, bool]] = {}
+        for i, q in enumerate(self.questions):
+            if answered is not None and q.id in answered:
+                self._saved[i] = answered[q.id]
+                self._drafts[i] = answered[q.id][0]
         self._ended = False
         self._placed = False
         self.rise = 0

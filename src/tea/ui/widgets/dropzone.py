@@ -191,6 +191,7 @@ class Dropzone(QWidget):
 
     def add_paths(self, paths: list[Path]) -> None:
         messages: list[str] = []
+        copies = len(self.copy_rows)
         for path in paths:
             if not path.is_file():
                 continue  # folders and vanished files are skipped
@@ -208,6 +209,8 @@ class Dropzone(QWidget):
             if message == strings.TOO_MANY_FILES:
                 break
         self._set_error("\n".join(messages))
+        if len(self.copy_rows) != copies:
+            self.changed.emit()  # copying() changed (the New blog form waits for copies)
 
     def copy_row(self, name: str, size_bytes: int, visible: bool = True) -> CopyRow:
         """A progress row for a copy in flight (also used by the snapshot tool)."""
@@ -274,6 +277,7 @@ class Dropzone(QWidget):
             if not self._alive():
                 return
             self._drop_copy(entry)
+            self.changed.emit()
             if isinstance(exc, attachments.AttachmentLimitError):
                 self._set_error(exc.message)
             elif not isinstance(exc, attachments.CopyCancelled):

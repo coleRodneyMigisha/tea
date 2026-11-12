@@ -266,3 +266,54 @@ def test_accessible_names(make: Callable[..., tuple]) -> None:
     popup, _, _ = make([_q(1)])
     assert popup.text_edit.accessibleName() == "Question number 1?"
     assert popup.later_button.text() == strings.POPUP_LATER
+
+
+# Resuming a scope session (M8)
+
+
+def _resumed(
+    qtbot: QtBot, theme: Theme, start: int, answered: dict[int, tuple[str, bool]]
+) -> tuple[QuestionPopup, Saved]:
+    saved: Saved = []
+    popup = QuestionPopup(
+        theme, [_q(1), CHOICE, _q(4), SCALE],
+        lambda q, text, skipped: saved.append((q.id, text, skipped)),
+        login=False, reduce_motion=True, start=start, answered=answered,
+    )  # fmt: skip
+    qtbot.addWidget(popup)
+    popup.show()
+    qtbot.waitExposed(popup)
+    return popup, saved
+
+
+def test_resume_opens_at_start_with_real_numbering(qtbot: QtBot, theme: Theme) -> None:
+    popup, _ = _resumed(qtbot, theme, 2, {1: ("first", False), 2: ("", True)})
+    assert popup.index == 2
+    assert popup.current.id == 4
+    assert popup.progress_text() == "Question 3 of 4"
+    assert not popup.back_button.isHidden()
+
+
+def test_back_after_resume_shows_stored_answers(qtbot: QtBot, theme: Theme) -> None:
+    popup, saved = _resumed(qtbot, theme, 2, {1: ("first", False), 2: ("Never", False)})
+    popup.back_button.click()
+    assert popup.choice_buttons[2].isChecked()
+    popup.back_button.click()
+    assert popup.text_edit.toPlainText() == "first"
+    popup.next_button.click()  # unchanged: not saved again
+    popup.next_button.click()
+    assert saved == []
+    assert popup.current.id == 4
+
+
+def test_changed_answer_after_resume_is_saved(qtbot: QtBot, theme: Theme) -> None:
+    popup, saved = _resumed(qtbot, theme, 1, {1: ("first", False)})
+    popup.back_button.click()
+    popup.text_edit.setPlainText("better")
+    popup.next_button.click()
+    assert saved == [(1, "better", False)]
+
+
+def test_start_past_the_end_is_clamped(qtbot: QtBot, theme: Theme) -> None:
+    popup, _ = _resumed(qtbot, theme, 9, {})
+    assert popup.index == 3
