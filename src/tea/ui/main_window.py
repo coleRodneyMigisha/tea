@@ -65,9 +65,10 @@ class MainWindow(QMainWindow):
         self.stack.setObjectName("Content")
         self.week_screen = ThisWeekScreen(theme, reduce_motion=settings.reduce_motion)
         self.drafts_screen = DraftsScreen(theme)
+        self.new_blog_screen = NewBlogScreen(theme)
         self.screens: dict[str, QWidget] = {
             "this_week": self.week_screen,
-            "new_blog": NewBlogScreen(theme),
+            "new_blog": self.new_blog_screen,
             "drafts": self.drafts_screen,
             "settings": SettingsScreen(theme),
         }

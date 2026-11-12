@@ -277,3 +277,18 @@ DATE_SHORT = "{day} {month}"
 DATE_YEAR = "{day} {month} {year}"
 CANCEL = "Cancel"
 OPEN_HANDOFF_PANE = "Open hand-off"
+
+# New blog (UI_DESIGN 3.2)
+NEW_TOPIC = "Topic"
+NEW_COVER = "What should it cover?"
+NEW_AUDIENCE = "Who is it for? (optional)"
+NEW_SOURCES = "Sources Claude may use"
+SOURCE_LABELS = {"own_documents": "My documents", "web": "Web", "academic": "Academic papers"}
+NEW_LENGTH = "Length"
+LENGTH_LABELS = {"short": "Short", "standard": "Standard", "long": "Long"}
+START_QUESTIONS = "Start questions"
+IN_PROGRESS = "You have a blog in progress: {topic}"
+RESUME = "Resume"
+PROMPT_WAITING = "A prompt is waiting for Claude's reply"
+PACKET_FAILED = "tea couldn't prepare the prompt. Press Resume to try again."
+TRAY_RESUME = "Resume blog questions"

@@ -27,12 +27,14 @@ def test_menu_items_in_order(qapp: QApplication) -> None:
         strings.TRAY_OPEN,
         strings.TRAY_ANSWER,
         strings.TRAY_NEW_BLOG,
+        strings.TRAY_RESUME,
         strings.TRAY_OPEN_HANDOFF,
         "Prompt due Fri 6:00 pm",
         strings.TRAY_PAUSE,
         strings.TRAY_QUIT,
     ]
     assert not tray.open_handoff_action.isVisible()
+    assert not tray.resume_action.isVisible()
     assert not tray.due_action.isEnabled()
     assert tray.pause_action.isCheckable()
 

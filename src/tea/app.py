@@ -25,6 +25,7 @@ from tea.ui.drafts_flow import DraftsFlow
 from tea.ui.handoff_flow import HandoffFlow
 from tea.ui.login_flow import LoginFlow
 from tea.ui.main_window import MainWindow
+from tea.ui.new_blog_flow import NewBlogFlow
 from tea.ui.theme import Theme, load_fonts
 from tea.ui.tray import Tray
 from tea.ui.week_flow import WeekFlow
@@ -73,7 +74,12 @@ class TeaApp:
         self.handoffs = HandoffFlow(
             self.theme, self.repos, self.clock, lambda: self.settings, parent=self.window
         )
-        self.provider = ManualProvider(self.handoffs.open_for_packet)  # M8: New blog delivers
+        # Kept for an automated provider later; New blog opens its hand-off by id (M8).
+        self.provider = ManualProvider(self.handoffs.open_for_packet)
+        self.new_blog = NewBlogFlow(
+            self.theme, self.repos, self.clock, lambda: self.settings,
+            self.window.new_blog_screen, self.handoffs,
+        )  # fmt: skip
         self.drafts = DraftsFlow(
             self.theme, self.repos, self.clock, lambda: self.settings,
             self.window.drafts_screen, self.handoffs,
@@ -116,6 +122,9 @@ class TeaApp:
         handoffs.changed.connect(self._refresh_tray)
         handoffs.created.connect(self._announce_started)
         self.drafts.changed.connect(week.refresh)
+        handoffs.changed.connect(self.new_blog.refresh)
+        self.drafts.changed.connect(self.new_blog.refresh)
+        self.new_blog.changed.connect(self._refresh_tray)
         self.drafts.changed.connect(self._refresh_tray)
         self.drafts.changed.connect(runner.run_now)
         week.answer_requested.connect(self.login.ask_now)
@@ -185,6 +194,7 @@ class TeaApp:
         if self.tray is not None:
             waiting = bool(self.repos.handoffs.list(open_only=True))
             self.tray.open_handoff_action.setVisible(waiting)
+            self.tray.resume_action.setVisible(self.new_blog.in_progress_topic() is not None)
             self.tray.refresh_due()
 
     def _build_tray(self, settings: Settings) -> None:
@@ -195,6 +205,7 @@ class TeaApp:
             lambda: tray.showMessage(strings.APP_NAME, strings.NO_QUESTIONS_LEFT)
         )
         tray.new_blog_requested.connect(lambda: self.show_window("new_blog"))
+        tray.resume_requested.connect(self.new_blog.resume)
         tray.pause_toggled.connect(self.window.set_paused)
         tray.quit_requested.connect(self.quit)
         tray.open_handoff_requested.connect(self.handoffs.open_latest)

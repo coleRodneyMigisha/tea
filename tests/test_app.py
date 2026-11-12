@@ -250,3 +250,41 @@ def test_import_then_open_draft_shows_the_drafts_screen(
     assert tea.window.current_screen() == "drafts"
     assert tea.drafts.view.title_label.text().startswith("Small teams need fewer documents")
     tea.close()
+
+
+def test_tray_resume_entry_follows_the_scope_session(
+    qapp: QApplication, qtbot: QtBot, instance: SingleInstance
+) -> None:
+    tea = _make(qapp, qtbot, instance, tray=True)
+    assert tea.tray is not None
+    assert not tea.tray.resume_action.isVisible()
+    screen = tea.window.new_blog_screen
+    screen.topic_edit.setText("Green tea at work")
+    screen.start_button.click()
+    popup = tea.new_blog.popup
+    assert popup is not None
+    popup.later_button.click()
+    assert tea.tray.resume_action.isVisible()
+    tea.tray.resume_action.trigger()
+    assert tea.new_blog.popup is not None
+    assert tea.new_blog.popup.index == 0
+    tea.new_blog.popup.later_button.click()
+    tea.close()
+
+
+def test_new_blog_done_opens_the_handoff_from_the_app(
+    qapp: QApplication, qtbot: QtBot, instance: SingleInstance
+) -> None:
+    tea = _make(qapp, qtbot, instance, tray=True)
+    screen = tea.window.new_blog_screen
+    screen.topic_edit.setText("Green tea at work")
+    screen.start_button.click()
+    popup = tea.new_blog.popup
+    assert popup is not None
+    while tea.new_blog.popup is popup:
+        popup.skip_button.click()
+    assert tea.handoffs.is_open()
+    assert tea.tray is not None
+    assert tea.tray.open_handoff_action.isVisible()
+    assert not tea.tray.resume_action.isVisible()
+    tea.close()
