@@ -45,7 +45,7 @@ class ThisWeekScreen(Page):
         ring_col.setSpacing(theme.space(2))
         self.ring = SteepRing(theme, reduce_motion=reduce_motion)
         ring_col.addWidget(self.ring, 0, Qt.AlignmentFlag.AlignHCenter)
-        self.pick_chip = Chip(strings.CHIP_PICK, "pick")
+        self.pick_chip = Chip(theme, strings.CHIP_PICK, "pick")
         ring_col.addWidget(self.pick_chip, 0, Qt.AlignmentFlag.AlignHCenter)
         self.action_button = _button("", "primary")
         self.action_button.clicked.connect(self._on_action)

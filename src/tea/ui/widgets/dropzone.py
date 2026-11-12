@@ -165,7 +165,7 @@ class Dropzone(QWidget):
         name.setWordWrap(False)
         name.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction)
         row.addWidget(name)
-        chip = Chip(strings.NOT_LISTED, "not_listed")
+        chip = Chip(self.theme, strings.NOT_LISTED, "not_listed")
         row.addWidget(chip)
         # Only after it has a parent: a parentless visible chip flashes up as its own
         # window and takes focus from the dropzone.
