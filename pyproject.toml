@@ -42,6 +42,8 @@ select = ["E", "F", "I", "B", "UP", "SIM", "ASYNC"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+# The 50 MB attachment tests fill a small /tmp tmpfs if every run's folders are kept.
+tmp_path_retention_policy = "failed"
 
 [tool.mypy]
 python_version = "3.12"
