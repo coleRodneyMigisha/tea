@@ -50,11 +50,11 @@ def test_prompt_versions_name_main_prompt_and_blocks(
     repos: Repos, settings: Settings, clock: FakeClock, ids: SampleIds
 ) -> None:
     weekly = _build("weekly", repos, settings, clock, ids)
-    assert weekly.prompt_versions == {"packet_draft": 1, "research_on": 1}
+    assert weekly.prompt_versions == {"packet_draft": 2, "research_on": 2}
     pick = _build("weekly_pick", repos, settings, clock, ids)
-    assert pick.prompt_versions == {"packet_draft": 1, "pick_topic": 1, "research_on": 1}
+    assert pick.prompt_versions == {"packet_draft": 2, "pick_topic": 1, "research_on": 2}
     manual = _build("manual", repos, settings, clock, ids)
-    assert manual.prompt_versions == {"packet_draft": 1, "attachments": 1, "research_off": 1}
+    assert manual.prompt_versions == {"packet_draft": 2, "attachments": 1, "research_off": 2}
     assert _build("improve", repos, settings, clock, ids).prompt_versions == {"packet_improve": 1}
     assert _build("audit", repos, settings, clock, ids).prompt_versions == {"packet_audit": 1}
 
@@ -103,22 +103,23 @@ def test_research_on_lists_allowed_types(
 ) -> None:
     text = _build("weekly", repos, settings, clock, ids).text
     assert "Allowed source types: my documents, web sources, academic papers." in text
-    assert "Do not search the web" not in text
+    assert "Do not add outside sources" not in text
+    assert "Link web sources inline" in text
 
 
 def test_research_off_when_web_and_academic_off(
     repos: Repos, settings: Settings, clock: FakeClock, ids: SampleIds
 ) -> None:
     text = _build("manual", repos, settings, clock, ids).text
-    assert "<research>\nDo not search the web" in text
-    assert "Use web search" not in text
+    assert "<research>\nWrite only from my attached files" in text
+    assert not re.search(r"\b(search|web)", text, re.IGNORECASE)  # "<research>" is fine
     assert "research the topic" not in text.lower()
 
 
 def test_academic_alone_turns_research_on(repos: Repos, clock: FakeClock) -> None:
     blog = repos.blogs.create("T", "T", "manual", allowed_sources=["academic"])
     p = packets.build("manual", repos, Settings(), clock, blog_id=blog.id)
-    assert p.prompt_versions["research_on"] == 1
+    assert p.prompt_versions["research_on"] == 2
 
 
 def test_pick_mode_always_researches(repos: Repos, clock: FakeClock) -> None:
@@ -126,7 +127,7 @@ def test_pick_mode_always_researches(repos: Repos, clock: FakeClock) -> None:
     blog = repos.blogs.create("", "", "weekly", allowed_sources=[])
     p = packets.build("weekly_pick", repos, Settings(), clock, blog_id=blog.id)
     assert "research_on" in p.prompt_versions
-    assert "Do not search the web" not in p.text
+    assert "Do not add outside sources" not in p.text
 
 
 def test_attachments_block_only_with_included_files(

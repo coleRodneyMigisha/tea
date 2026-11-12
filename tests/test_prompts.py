@@ -40,7 +40,7 @@ def test_render_fills_every_variable() -> None:
     out = prompts.render("blocks/research_on", {"allowed_types": "web sources"})
     assert "web sources" in out.text
     assert "{{" not in out.text
-    assert (out.name, out.version) == ("research_on", 1)
+    assert (out.name, out.version) == ("research_on", 2)
 
 
 def test_render_raises_on_unfilled_variable() -> None:
