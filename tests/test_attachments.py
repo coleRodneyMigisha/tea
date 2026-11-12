@@ -199,3 +199,50 @@ def test_module_never_opens_files_for_reading_content() -> None:
     source = Path(attachments.__file__).read_text()
     for banned in ("import zipfile", "import mimetypes", "PdfReader", "docx", ".read_text("):
         assert banned not in source
+
+
+def test_long_names_fit_the_file_system(repos: Repos, tmp_path: Path) -> None:
+    blog = _blog(repos)
+    stem = "é" * 140  # 280 bytes in UTF-8
+    target = attachments.reserve(blog, stem + ".pdf")
+    assert len(target.part.name.encode()) <= 255
+    assert target.final.name.endswith(".pdf")
+    target.part.rename(target.final)
+    again = attachments.reserve(blog, stem + ".pdf")
+    assert again.final.name.endswith(" (2).pdf") and len(again.part.name.encode()) <= 255
+    odd = attachments.reserve(blog, "a." + "x" * 300)
+    assert len(odd.part.name.encode()) <= 255
+
+
+def test_long_name_can_be_added(repos: Repos, tmp_path: Path) -> None:
+    name = "n" * 251  # fits on disk, but not with ".part" added
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / name).write_bytes(b"x")
+    att = attachments.add(repos, _blog(repos), src / name)
+    assert Path(att.stored_path).exists() and len(att.filename.encode()) <= 250
+
+
+def test_copy_stops_when_a_file_grows_past_the_limit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(config, "MAX_ATTACHMENT_BYTES", 2 * MB)
+    src = _file(tmp_path / "src", "grew.bin", 3 * MB)
+    target = attachments.reserve(1, "grew.bin")
+    with pytest.raises(AttachmentLimitError) as err:
+        attachments.copy_file(src, target)
+    assert err.value.message == strings.FILE_TOO_LARGE.format(name="grew.bin")
+    assert not target.part.exists() and not target.final.exists()
+
+
+def test_sweep_removes_stale_part_files(repos: Repos, tmp_path: Path) -> None:
+    blog = _blog(repos)
+    stale = attachments.reserve(blog, "a.pdf")
+    kept = attachments.add(repos, blog, _file(tmp_path / "src", "b.pdf"))
+    assert attachments.sweep_parts() == 1
+    assert not stale.part.exists() and Path(kept.stored_path).exists()
+    assert attachments.reserve(blog, "a.pdf").final.name == "a.pdf"
+
+
+def test_sweep_without_uploads_folder() -> None:
+    assert attachments.sweep_parts() == 0

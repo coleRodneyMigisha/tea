@@ -17,6 +17,8 @@ from tea.db.rows import Attachment
 from tea.ui import strings
 
 CHUNK_BYTES = 1024 * 1024
+NAME_MAX_BYTES = 255  # ext4 and most Linux file systems
+PART = ".part"
 NOTICE_KEY = "attachments_notice_shown"
 
 
@@ -57,12 +59,21 @@ def check(repos: Repos, blog_id: int, path: Path, pending: int = 0) -> str | Non
     return None
 
 
+def _fit(stem: str, tail: str) -> str:
+    """`stem + tail`, with the stem cut so the name plus ".part" fits NAME_MAX_BYTES."""
+    room = NAME_MAX_BYTES - len(PART) - len(tail.encode())
+    if room < 1:  # an absurd extension: cut the whole name instead
+        stem, tail = stem + tail, ""
+        room = NAME_MAX_BYTES - len(PART)
+    return stem.encode()[:room].decode(errors="ignore") + tail
+
+
 def _candidates(name: str) -> Iterator[str]:
-    yield name
     stem, suffix = Path(name).stem, Path(name).suffix
+    yield _fit(stem, suffix)
     n = 2
     while True:
-        yield f"{stem} ({n}){suffix}"
+        yield _fit(stem, f" ({n}){suffix}")
         n += 1
 
 
@@ -72,7 +83,7 @@ def reserve(blog_id: int, name: str) -> Target:
     folder.mkdir(parents=True, exist_ok=True)
     for candidate in _candidates(name):
         final = folder / candidate
-        part = folder / f"{candidate}.part"
+        part = folder / f"{candidate}{PART}"
         if final.exists():
             continue
         try:
@@ -86,6 +97,22 @@ def reserve(blog_id: int, name: str) -> Target:
 
 def release(target: Target) -> None:
     target.part.unlink(missing_ok=True)
+
+
+def sweep_parts() -> int:
+    """Delete `.part` files left by a copy that never finished (tea was killed). Run at app
+    start, before any copy can begin. Returns how many were removed."""
+    root = config.uploads_dir()
+    if not root.is_dir():
+        return 0
+    removed = 0
+    for part in root.glob(f"*/*{PART}"):
+        try:
+            part.unlink(missing_ok=True)
+        except OSError:
+            continue  # a folder the owner locked; harmless, the name just stays taken
+        removed += 1
+    return removed
 
 
 def copy_file(
@@ -107,6 +134,8 @@ def copy_file(
                     break
                 fout.write(chunk)
                 done += len(chunk)
+                if done > config.MAX_ATTACHMENT_BYTES:  # the file grew after `check`
+                    raise AttachmentLimitError(strings.FILE_TOO_LARGE.format(name=src.name))
                 if progress is not None:
                     progress(done, total)
         if progress is not None and total == 0:

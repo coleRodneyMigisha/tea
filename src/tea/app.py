@@ -11,6 +11,7 @@ from tea import settings as settings_mod
 from tea.clock import Clock, SystemClock
 from tea.db.connection import open_db
 from tea.db.repos import Repos
+from tea.domain import attachments
 from tea.domain.questions import seed_bank
 from tea.domain.weekly import handoff_title
 from tea.logging_setup import log_event, setup_logging
@@ -194,6 +195,7 @@ class TeaApp:
         Then the manual session for `tea login-questions`, and the scheduler, whose first
         pass shows the focus dialog and the login questions when they are due.
         """
+        attachments.sweep_parts()  # copies cut off by a crash; none can be running yet
         if not background:
             self.window.show()
         if ask_questions:

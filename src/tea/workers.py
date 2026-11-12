@@ -86,7 +86,7 @@ def run(
     def failed(exc: object) -> None:
         finish()
         assert isinstance(exc, BaseException)
-        if not isinstance(exc, Cancelled) and on_error is None:
+        if not (isinstance(exc, Cancelled) or job.is_cancelled()) and on_error is None:
             log_event("worker_failed", error=type(exc).__name__)
         if on_error is not None:
             on_error(exc)

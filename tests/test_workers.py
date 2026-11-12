@@ -97,3 +97,25 @@ def test_jobs_are_kept_alive_until_finished(qtbot: QtBot) -> None:
 def _drain() -> None:
     yield
     workers.pool().waitForDone(5000)
+
+
+def test_cancelled_job_without_on_error_is_not_logged(
+    qtbot: QtBot, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    logged: list[str] = []
+    monkeypatch.setattr(workers, "log_event", lambda event, **_: logged.append(event))
+    started = threading.Event()
+
+    def wait(*, progress: Callable[[int, int], None], cancelled: Callable[[], bool]) -> None:
+        started.set()
+        while not cancelled():
+            threading.Event().wait(0.01)
+        raise RuntimeError("stopped")  # a job's own cancel exception
+
+    job = workers.run(wait)
+    assert started.wait(5)
+    job.cancel()
+    qtbot.waitUntil(lambda: job.finished, timeout=5000)
+    assert logged == []
+    workers.run(_boom)
+    qtbot.waitUntil(lambda: logged == ["worker_failed"], timeout=5000)

@@ -179,3 +179,15 @@ def test_quit_saves_geometry_and_quits(
     assert quits == [True]
     assert config.window_state_path().is_file()
     tea.tray.hide()
+
+
+def test_start_sweeps_copies_cut_off_by_a_crash(
+    qapp: QApplication, qtbot: QtBot, instance: SingleInstance
+) -> None:
+    from tea.domain import attachments
+
+    stale = attachments.reserve(7, "report.pdf")
+    tea = _make(qapp, qtbot, instance, tray=False)
+    tea.start(background=True)
+    assert not stale.part.exists()
+    tea.close()
