@@ -206,3 +206,27 @@ def test_carried_over_draft_is_exposed_in_week_view(
 
     assert view.carried_blog_id == handoff.blog_id
     assert view.carried_title == "Small teams need fewer documents, not better ones"
+
+
+def test_changing_a_picked_topic_after_import_starts_a_new_weekly_handoff(
+    repos: Repos, clock: FakeClock
+) -> None:
+    clock.set(t(12, 9))
+    weekly.enter_pick_mode(repos, Settings(), WEEK)
+    clock.set(t(13, 18))
+    pick = weekly.prepare_packet(repos, Settings(), clock, "weekly_pick", WEEK)
+    import_reply(repos, pick.id, sample_replies.WEEKLY_PICK)
+    assert pick.blog_id is not None
+    old_draft = repos.drafts.latest_for_blog(pick.blog_id)
+    assert old_draft is not None
+
+    clock.set(t(13, 19))
+    new = weekly.save_focus(repos, Settings(), clock, WEEK, "A topic I chose myself")
+
+    assert new is not None and new.kind == "weekly"
+    assert new.blog_id is not None and new.blog_id != pick.blog_id
+    kept = repos.drafts.latest_for_blog(pick.blog_id)
+    assert kept is not None and kept.id == old_draft.id  # old draft kept
+    view = week_view(repos, Settings(), clock.now())
+    assert view.focus == "A topic I chose myself"
+    assert view.topic_origin == "owner"

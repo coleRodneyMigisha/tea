@@ -65,13 +65,20 @@ def save_focus(
     with repos.transaction():
         w = repos.weeks.ensure(week)
         changed = w.focus_text != text or w.topic_origin != "owner"
+        topic_changed = w.focus_text != text
         if changed:
             repos.weeks.set_focus(week, text, "owner")
         repos.weeks.set_pick_mode(week, False)
         blog = week_blog(repos, week)
+        redo = False
         if blog is None:
             _new_blog(repos, settings, week, text, "owner")
-        elif repos.drafts.latest_for_blog(blog.id) is None:
+        elif repos.drafts.latest_for_blog(blog.id) is not None:
+            # A draft is already imported: keep it, and start a new weekly blog for the new topic.
+            if topic_changed:
+                _new_blog(repos, settings, week, text, "owner")
+                redo = True
+        else:
             repos.blogs.update(blog.id, title=text, topic=text, topic_origin="owner")
         qs.instantiate_focus(repos, week, text)
         repos.jobs.set_status(FOCUS_JOB, "done", week)
@@ -81,7 +88,8 @@ def save_focus(
                 if h.kind in WEEKLY_KINDS:
                     repos.handoffs.mark_superseded(h.id)
                     superseded = True
-    # The focus is saved even if the rebuild fails; the scheduler then retries the packet.
+    if redo:
+        return prepare_packet(repos, settings, clock, "weekly", week)
     if superseded and in_catch_up(clock.now(), prompt_due(week, settings, clock.tz())):
         return prepare_packet(repos, settings, clock, "weekly", week)
     return None
