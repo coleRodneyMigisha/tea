@@ -94,6 +94,63 @@ def _focused_set_focus(theme: Any, repos: Repos, clock: Clock) -> Any:
     return window
 
 
+CANDIDATES = [
+    {
+        "n": 1,
+        "topic": "Right-to-repair rules for phones",
+        "angle": "What the new rules change for buyers",
+        "why": "Covered by two national outlets this week",
+        "urls": ["https://example.org/a", "https://example.org/b"],
+    },
+    {
+        "n": 2,
+        "topic": "Four-day week trials",
+        "angle": "What the trial data says",
+        "why": "Reported by two business papers",
+        "urls": ["https://example.org/c"],
+    },
+    {"n": 3, "topic": "Open data portals", "angle": "Why reuse stays low", "why": "", "urls": []},
+]
+
+
+def _picked(repos: Repos, clock: Clock, settings: Settings) -> None:
+    from tea.devtools import sample_replies
+    from tea.domain import weekly
+    from tea.handoff.importer import import_reply
+
+    assert isinstance(clock, FakeClock)
+    now = clock.now()
+    _at(clock, 3, 9, 5)
+    weekly.enter_pick_mode(repos, settings, WEEK)
+    _at(clock, 4, 18, 5)
+    h = weekly.prepare_packet(repos, settings, clock, "weekly_pick", WEEK)
+    import_reply(repos, h.id, sample_replies.WEEKLY_PICK)
+    clock.set(now)
+
+
+def _carried(repos: Repos, clock: Clock, settings: Settings) -> None:
+    from tea.devtools import sample_replies
+    from tea.domain import weekly
+    from tea.handoff.importer import import_reply
+
+    assert isinstance(clock, FakeClock)
+    now = clock.now()
+    _at(clock, 0, 9, 5)
+    _focus(repos, clock, settings)
+    _at(clock, 4, 18, 5)
+    h = weekly.prepare_packet(repos, settings, clock, "weekly", WEEK)
+    import_reply(repos, h.id, sample_replies.WEEKLY)
+    assert h.blog_id is not None
+    repos.blogs.update(h.blog_id, carried_weeks=1)
+    clock.set(now)
+
+
+def _why(theme: Any, repos: Repos, clock: Clock) -> Any:
+    from tea.ui.widgets.why_dialog import WhyDialog
+
+    return WhyDialog(theme, topic=str(CANDIDATES[0]["topic"]), candidates=CANDIDATES)
+
+
 def register_all(register: Callable[[str, str, Any], None], state: Callable[..., Any]) -> None:
     week = "this_week"
     for name, build in {
@@ -110,9 +167,12 @@ def register_all(register: Callable[[str, str, Any], None], state: Callable[...,
         "paused": _week(2, 10, 0, None, pause_automation=True),
     }.items():
         register(week, name, state(week, build=build))
-    dialog = "focus_dialog"
-    register(dialog, "empty", state(dialog, build=_dialog()))
-    register(dialog, "typed", state(dialog, build=_dialog(FOCUS)))
-    register(dialog, "carried", state(dialog, build=_dialog(carried=True)))
-    register(dialog, "typed_focused", state(dialog, build=_dialog(FOCUS), keep_focus=True))
-    register(week, "no_focus_focused", state(week, build=_focused_set_focus, keep_focus=True))
+        dialog = "focus_dialog"
+        register(dialog, "empty", state(dialog, build=_dialog()))
+        register(dialog, "typed", state(dialog, build=_dialog(FOCUS)))
+        register(dialog, "carried", state(dialog, build=_dialog(carried=True)))
+        register(dialog, "typed_focused", state(dialog, build=_dialog(FOCUS), keep_focus=True))
+        register(week, "no_focus_focused", state(week, build=_focused_set_focus, keep_focus=True))
+        register(week, "picked", state(week, build=_week(5, 10, 0, _picked)))
+        register(week, "carried", state(week, build=_week(7, 10, 0, _carried)))
+        register("why_dialog", "sample", state("why_dialog", build=_why))
