@@ -39,7 +39,8 @@ def _banner(theme: Theme, action: str) -> tuple[QFrame, QLabel, QPushButton]:
     frame = QFrame()
     frame.setObjectName("Banner")
     line = QHBoxLayout(frame)
-    line.setContentsMargins(theme.space(3), theme.space(1), theme.space(1), theme.space(1))
+    pad = theme.size("panel_padding")  # text and button line up with the form below
+    line.setContentsMargins(pad, theme.space(1), pad, theme.space(1))
     line.setSpacing(theme.space(2))
     label = muted("", "strong")
     line.addWidget(label, 1)
@@ -68,7 +69,7 @@ class NewBlogScreen(Page):
         content = QWidget()
         content.setObjectName("Content")
         column = QVBoxLayout(content)
-        column.setContentsMargins(0, 0, 0, 0)
+        column.setContentsMargins(0, 0, 0, theme.space(5))  # the page's bottom margin
         column.setSpacing(theme.space(3))
         width = theme.size("form_max_width")
 
@@ -115,6 +116,10 @@ class NewBlogScreen(Page):
         assert isinstance(outer, QVBoxLayout)
         outer.takeAt(outer.count() - 1)  # Page's trailing stretch: the scroll area fills instead
         outer.setStretch(outer.count() - 1, 1)
+        margins = outer.contentsMargins()
+        margins.setBottom(0)  # inside the scroll area instead, so nothing looks clipped
+        outer.setContentsMargins(margins)
+        scroll.setMaximumWidth(width + theme.space(4))  # scrollbar beside the form
         self.reset("standard")
 
     # Layout
@@ -130,6 +135,7 @@ class NewBlogScreen(Page):
         self.cover_edit = QPlainTextEdit()
         self.cover_edit.setAccessibleName(strings.NEW_COVER)
         self.cover_edit.setTabChangesFocus(True)
+        self.cover_edit.ensurePolished()  # QSS border and padding count in the margins
         lines = self.cover_edit.fontMetrics().lineSpacing() * COVER_ROWS
         margins = self.cover_edit.contentsMargins()
         doc = int(self.cover_edit.document().documentMargin() * 2)
@@ -146,7 +152,10 @@ class NewBlogScreen(Page):
             align = Qt.AlignmentFlag.AlignLeft | (
                 Qt.AlignmentFlag.AlignTop if top else Qt.AlignmentFlag.AlignVCenter
             )
-            grid.addWidget(_label(text, edit), row, 0, align)
+            label = _label(text, edit)
+            if top:  # level with the first line of text, like the centred labels
+                label.setContentsMargins(0, edit.contentsMargins().top(), 0, 0)
+            grid.addWidget(label, row, 0, align)
             grid.addWidget(edit, row, 1)
         grid.setColumnStretch(1, 1)
         form.addLayout(grid)
@@ -239,6 +248,7 @@ class NewBlogScreen(Page):
 
     def _update_start(self) -> None:
         self.start_button.setEnabled(bool(self.topic_edit.text().strip()) and not self._copying)
+        self.cancel_button.setEnabled(not self._copying)  # Cancel deletes the copies' blog
 
     def _on_start(self) -> None:
         if self.start_button.isEnabled():

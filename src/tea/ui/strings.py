@@ -291,4 +291,8 @@ IN_PROGRESS = "You have a blog in progress: {topic}"
 RESUME = "Resume"
 PROMPT_WAITING = "A prompt is waiting for Claude's reply"
 PACKET_FAILED = "tea couldn't prepare the prompt. Press Resume to try again."
+START_FAILED = "tea couldn't start the questions. Press Start questions again."
+FINISH_OPEN_QUESTIONS = (
+    "Finish or close the open questions first. Your form is kept, so you can start it after."
+)
 TRAY_RESUME = "Resume blog questions"

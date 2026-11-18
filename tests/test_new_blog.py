@@ -304,3 +304,84 @@ def test_closing_mid_session_resumes_after_restart(
     finally:
         again.close()
         conn.close()
+
+
+# Review fixes (M8)
+
+
+def test_cancel_waits_for_file_copies(world: World, tmp_path: Path, qtbot: QtBot) -> None:
+    src = tmp_path / "notes.txt"
+    src.write_bytes(b"x" * 1024)
+    dz = world.screen.dropzone
+    assert dz is not None
+    dz.add_paths([src])
+    assert dz.copying()
+    assert not world.screen.cancel_button.isEnabled()
+    world.screen.cancel_requested.emit()  # ignored while a copy runs
+    assert world.screen.dropzone is dz
+    qtbot.waitUntil(lambda: not dz.copying())
+    assert world.screen.cancel_button.isEnabled()
+    assert len(world.repos.attachments.list_for_blog(dz.blog_id)) == 1
+
+
+def test_packet_failure_shows_a_message_and_asks_for_the_window(
+    world: World, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from tea.handoff import packets
+
+    def fail(*_a: object, **_k: object) -> None:
+        raise packets.PacketError("boom")
+
+    monkeypatch.setattr(manual, "finish", fail)
+    shown: list[bool] = []
+    world.flow.needs_window.connect(lambda: shown.append(True))
+    world.fill()
+    world.screen.start_button.click()
+    world.answer(len(world.popup.questions))
+    assert world.screen.error.text() == strings.PACKET_FAILED
+    assert shown == [True]
+    assert world.screen.progress_banner.isVisibleTo(world.screen)  # Resume tries again
+
+
+def test_resume_with_every_question_answered_prepares_the_prompt(world: World) -> None:
+    world.fill()
+    world.screen.start_button.click()
+    bid = manual.in_progress(world.repos)[0].id
+    n = len(world.popup.questions)
+    world.answer(n - 1)
+    from tea.domain import questions as qs
+
+    last = world.popup.current
+    world.popup.close()  # the app quit before the last answer reached the flow
+    qs.record_answer(world.repos, last, manual.CONTEXT, "late", blog_id=bid)
+    world.flow.popup = None
+    world.flow.resume()
+    assert world.flow.popup is None
+    (h,) = world.repos.handoffs.list(blog_id=bid)
+    assert h.id in world.handoffs.dialogs
+
+
+def test_start_while_another_session_is_open_explains_why(world: World) -> None:
+    world.fill("First")
+    world.screen.start_button.click()
+    first = world.flow.popup
+    world.fill("Second")
+    world.screen.start_button.click()
+    assert world.flow.popup is first
+    assert world.screen.error.text() == strings.FINISH_OPEN_QUESTIONS
+    assert world.screen.topic_edit.text() == "Second"  # the new form is kept
+    assert len(manual.in_progress(world.repos)) == 1
+
+
+def test_start_on_a_vanished_form_row_keeps_the_typed_form(world: World) -> None:
+    world.fill("Kept topic")
+    dz = world.screen.dropzone
+    assert dz is not None
+    world.repos.blogs.delete(dz.blog_id)
+    world.screen.start_button.click()
+    assert world.screen.error.text() == strings.START_FAILED
+    assert world.screen.topic_edit.text() == "Kept topic"
+    new = world.screen.dropzone
+    assert new is not None and world.repos.blogs.get(new.blog_id) is not None
+    world.screen.start_button.click()  # works with the new row
+    assert world.flow.popup is not None

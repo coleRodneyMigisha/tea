@@ -36,14 +36,14 @@ def scope_questions(repos: Repos, blog_id: int) -> list[Question]:
     return repos.questions.list(origin="blog", blog_id=blog_id)
 
 
-def _is_form(repos: Repos, blog: Blog) -> bool:
+def is_form(repos: Repos, blog: Blog) -> bool:
     return blog.status == SCOPING and not scope_questions(repos, blog.id)
 
 
 def form_blog(repos: Repos) -> Blog:
     """The New blog form's row: the newest unstarted one, or a fresh one."""
     for blog in reversed(repos.blogs.list(status=SCOPING, origin="manual")):
-        if _is_form(repos, blog):
+        if is_form(repos, blog):
             return blog
     return repos.blogs.create("", "", "manual", status=SCOPING)
 
@@ -121,7 +121,7 @@ def finish(repos: Repos, settings: Settings, clock: Clock, blog_id: int) -> Hand
 def discard_form(repos: Repos, blog_id: int) -> None:
     """Cancel: delete an unstarted form row and tea's copies of its files."""
     blog = repos.blogs.get(blog_id)
-    if blog is None or not _is_form(repos, blog):
+    if blog is None or not is_form(repos, blog):
         return
     with repos.transaction():
         for att in repos.attachments.list_for_blog(blog_id):

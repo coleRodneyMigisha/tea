@@ -125,6 +125,7 @@ class TeaApp:
         handoffs.changed.connect(self.new_blog.refresh)
         self.drafts.changed.connect(self.new_blog.refresh)
         self.new_blog.changed.connect(self._refresh_tray)
+        self.new_blog.needs_window.connect(lambda: self.show_window("new_blog"))
         self.drafts.changed.connect(self._refresh_tray)
         self.drafts.changed.connect(runner.run_now)
         week.answer_requested.connect(self.login.ask_now)

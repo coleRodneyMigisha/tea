@@ -89,7 +89,7 @@ class QuestionPopup(QWidget):
         self.theme = theme
         self.questions = list(questions)
         self.login = login
-        self.index = min(max(start, 0), len(self.questions) - 1)
+        self.index = max(min(start, len(self.questions) - 1), 0)
         self._save = save
         self._drafts: dict[int, str] = {}
         self._saved: dict[int, tuple[str, bool]] = {}

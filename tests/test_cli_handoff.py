@@ -110,3 +110,18 @@ def test_import_reply_missing_file_fails(replies: Path, tmp_dirs: Path) -> None:
     assert _run("tea", "packet").returncode == 0
     out = _run("tea", "import-reply", str(tmp_dirs / "nope.txt"))
     assert out.returncode == 1 and "Traceback" not in out.stderr
+
+
+def test_seeding_ignores_the_new_blog_form_row(tmp_dirs: Path) -> None:
+    """`make run` creates the New blog form's empty row; seeding must still work (M8)."""
+    from tea import config
+    from tea.clock import SystemClock
+    from tea.db.connection import open_db
+    from tea.db.repos import Repos
+    from tea.domain import manual
+
+    conn = open_db(config.db_path())
+    manual.form_blog(Repos(conn, SystemClock()))
+    conn.close()
+    seeded = _run("tea.devtools.sample_data")
+    assert seeded.returncode == 0, seeded.stderr

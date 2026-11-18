@@ -16,6 +16,7 @@ from tea.clock import Clock, FakeClock, SystemClock
 from tea.db.connection import open_db
 from tea.db.repos import Repos
 from tea.devtools.sample_replies import MALFORMED, WELL_FORMED
+from tea.domain import manual
 from tea.domain.weeks import week_start
 
 FOCUS = "Why small teams should write fewer documents"
@@ -139,7 +140,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         system_clock = SystemClock()
         clock = FakeClock(system_clock.now() - timedelta(minutes=10))
         repos = Repos(conn, clock)
-        if repos.blogs.list():
+        # The New blog form's empty row (made whenever the app runs) is not real data.
+        if any(not manual.is_form(repos, b) for b in repos.blogs.list()):
             print(f"{path} already has blogs; not seeding.", file=sys.stderr)
             return 1
         ids = seed(repos, clock)

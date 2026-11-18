@@ -317,3 +317,8 @@ def test_changed_answer_after_resume_is_saved(qtbot: QtBot, theme: Theme) -> Non
 def test_start_past_the_end_is_clamped(qtbot: QtBot, theme: Theme) -> None:
     popup, _ = _resumed(qtbot, theme, 9, {})
     assert popup.index == 3
+
+
+def test_negative_start_is_clamped_to_the_first_question(qtbot: QtBot, theme: Theme) -> None:
+    popup, _ = _resumed(qtbot, theme, -3, {})
+    assert popup.index == 0

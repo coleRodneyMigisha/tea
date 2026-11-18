@@ -29,6 +29,7 @@ from tea.ui.widgets.question_popup import DONE, QuestionPopup
 
 class NewBlogFlow(QObject):
     changed = Signal()  # a session started, paused or finished (tray and banners refresh)
+    needs_window = Signal()  # a message on the screen the owner may not be looking at
 
     def __init__(
         self,
@@ -58,10 +59,11 @@ class NewBlogFlow(QObject):
 
     # The form
 
-    def _new_form(self) -> None:
+    def _new_form(self, *, keep_values: bool = False) -> None:
         blog = manual.form_blog(self.repos)
         self.screen.set_dropzone(Dropzone(self.theme, self.repos, blog.id))
-        self.screen.reset(self._settings().default_length)
+        if not keep_values:
+            self.screen.reset(self._settings().default_length)
 
     def _form_id(self) -> int | None:
         dz = self.screen.dropzone
@@ -76,15 +78,16 @@ class NewBlogFlow(QObject):
 
     def cancel(self) -> None:
         dz, form = self.screen.dropzone, self._form_id()
-        if dz is not None:
-            dz.cancel_all()
+        if dz is not None and dz.copying():
+            return  # a copy finishing later would record a file for a deleted blog
         if form is not None:
             manual.discard_form(self.repos, form)
         log_event("new_blog_cancelled")
         self._new_form()
 
     def start(self) -> None:
-        if self.popup is not None:  # a session is open: bring it back instead
+        if self.popup is not None:  # one session at a time; the filled form stays
+            self.screen.show_error(strings.FINISH_OPEN_QUESTIONS)
             self._raise()
             return
         dz, form = self.screen.dropzone, self._form_id()
@@ -94,6 +97,8 @@ class NewBlogFlow(QObject):
             chosen = manual.start(self.repos, form, **self.screen.values())  # type: ignore[arg-type]
         except (ValueError, LookupError) as exc:
             log_event("new_blog_start_failed", logging.WARNING, error=type(exc).__name__)
+            self._new_form(keep_values=True)  # the row was gone: a fresh one, same answers
+            self.screen.show_error(strings.START_FAILED)
             return
         log_event("new_blog_started", blog_id=form, count=len(chosen))
         self._new_form()
@@ -166,6 +171,7 @@ class NewBlogFlow(QObject):
             self.screen.show_error(strings.PACKET_FAILED)
             self.refresh()
             self.changed.emit()
+            self.needs_window.emit()  # the session may have been resumed from the tray
             return
         log_event("manual_prompt_ready", handoff=h.id)
         self.refresh()
