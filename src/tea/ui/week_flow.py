@@ -22,6 +22,7 @@ from tea.ui.screens.this_week import ThisWeekScreen
 from tea.ui.theme import Theme
 from tea.ui.week_state import week_view
 from tea.ui.widgets.focus_dialog import FocusDialog
+from tea.ui.widgets.why_dialog import WhyDialog
 
 
 class LoginStarter(Protocol):
@@ -55,6 +56,7 @@ class WeekFlow(QObject):
         self.screen = screen
         self.login = login
         self.dialog: FocusDialog | None = None
+        self.why_dialog: WhyDialog | None = None
         self.handoff_open: Callable[[], bool] = lambda: False  # set by the app (HandoffFlow)
         self._login_waiting = False
         if reduce_motion is not None:
@@ -64,6 +66,7 @@ class WeekFlow(QObject):
         screen.open_draft_requested.connect(self.open_draft)
         screen.answer_requested.connect(self.answer_requested)
         screen.preview_requested.connect(self.preview_requested)
+        screen.why_requested.connect(self.show_why_dialog)
         self.refresh()
 
     # Scheduler hooks
@@ -111,6 +114,32 @@ class WeekFlow(QObject):
 
     def refresh(self) -> None:
         self.screen.set_view(week_view(self.repos, self._settings(), self.clock.now()))
+
+    def show_why_dialog(self) -> None:
+        view = week_view(self.repos, self._settings(), self.clock.now())
+        if not view.focus or view.topic_origin != "auto_trending":
+            return
+
+        if self.why_dialog is not None:
+            self.why_dialog.raise_()
+            self.why_dialog.activateWindow()
+            return
+
+        dialog = WhyDialog(
+            self.theme,
+            topic=view.focus,
+            candidates=view.trend_candidates,
+        )
+        dialog.finished.connect(self._why_closed)
+        self.why_dialog = dialog
+        dialog.show()
+        dialog.raise_()
+        dialog.activateWindow()
+
+    def _why_closed(self, _result: int) -> None:
+        dialog, self.why_dialog = self.why_dialog, None
+        if dialog is not None:
+            dialog.deleteLater()
 
     def _save(self, week: date, text: str) -> None:
         try:

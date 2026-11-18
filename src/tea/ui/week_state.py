@@ -6,6 +6,7 @@ even while paused), then Paused, then No focus, Pick mode and Steeping.
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from typing import Any
 
 from tea.db.repos import Repos
 from tea.domain.weekly import WEEKLY_KINDS, elapsed, pick_time, week_blog
@@ -24,6 +25,9 @@ class WeekView:
     remaining: timedelta
     focus: str | None
     topic_origin: str
+    carried_blog_id: int | None
+    carried_title: str | None
+    trend_candidates: list[dict[str, Any]]
     pick_mode: bool
     pick_soon: bool  # pick day, before pick time: "tea will ask Claude to pick a topic at 9 am"
     pick_time: datetime
@@ -84,6 +88,19 @@ def week_view(repos: Repos, settings: Settings, now: datetime) -> WeekView:
     due = prompt_due(this, settings, tz)
     pick_at = pick_time(this, settings, tz)
 
+    carried_blog_id: int | None = None
+    carried_title: str | None = None
+
+    for candidate in reversed(repos.blogs.list(origin="weekly", status="ready")):
+        if candidate.carried_weeks < 1:
+            continue
+        draft = repos.drafts.latest_for_blog(candidate.id)
+        if draft is None:
+            continue
+        carried_blog_id = candidate.id
+        carried_title = draft.title
+        break
+
     handoff = None
     for h in repos.handoffs.list(open_only=True, week_start=this):
         if h.kind in WEEKLY_KINDS:
@@ -115,6 +132,9 @@ def week_view(repos: Repos, settings: Settings, now: datetime) -> WeekView:
         remaining=elapsed(due, now),
         focus=focus,
         topic_origin=w.topic_origin if w is not None else "owner",
+        trend_candidates=list(w.trend_candidates or []) if w is not None else [],
+        carried_blog_id=carried_blog_id,
+        carried_title=carried_title,
         pick_mode=pick_mode,
         pick_soon=pick_soon,
         pick_time=pick_at,

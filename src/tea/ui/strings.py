@@ -70,6 +70,11 @@ NO_QUESTIONS_LEFT = (
     "You've answered every question for now. New ones arrive with next week's focus."
 )
 AUTO_TOPIC = "Picked by tea because you hadn't set a focus."
+WHY = "Why?"
+WHY_TITLE = "Why this topic?"
+WHY_ANGLE = "Angle"
+WHY_REASON = "Why it is trending"
+WHY_SOURCES = "Sources"
 AUTO_TOPIC_NOTE = "Topic picked by tea. No answers were given for this focus."
 CARRIED_OVER = "Carried over from last week. An improvement prompt is prepared on Friday."
 SHELVED = "Shelved. tea won't prepare anything for this draft unless you revive it."

@@ -34,10 +34,12 @@ class ThisWeekScreen(Page):
     open_draft_requested = Signal(int)
     answer_requested = Signal()
     preview_requested = Signal()
+    why_requested = Signal()
 
     def __init__(self, theme: Theme, *, reduce_motion: bool = False) -> None:
         super().__init__(theme, strings.TITLE_WEEK)
         self.view: WeekView | None = None
+        self._carried_blog_id: int | None = None
         top = QHBoxLayout()
         top.setSpacing(theme.space(5))
 
@@ -67,12 +69,43 @@ class ThisWeekScreen(Page):
         self.focus_text.setProperty("muted", True)
         self.focus_text.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         focus_col.addWidget(self.focus_text)
+
+        self.picked_label = muted(strings.AUTO_TOPIC, "caption")
+        self.picked_label.setWordWrap(True)
+        focus_col.addWidget(self.picked_label)
+
+        self.why_button = _button(strings.WHY, "quiet")
+        self.why_button.clicked.connect(self.why_requested)
+        focus_col.addWidget(self.why_button, 0, Qt.AlignmentFlag.AlignLeft)
+
         self.edit_focus_button = _button(strings.EDIT_FOCUS)
         self.edit_focus_button.clicked.connect(self.set_focus_requested)
         focus_col.addWidget(self.edit_focus_button, 0, Qt.AlignmentFlag.AlignLeft)
         focus_col.addStretch(1)
         top.addLayout(focus_col, 1)
         self.body.addLayout(top)
+
+        self.carried_card, carried_layout = panel(theme)
+
+        self.carried_title = QLabel("")
+        self.carried_title.setProperty("role", "strong")
+        self.carried_title.setWordWrap(True)
+        carried_layout.addWidget(self.carried_title)
+
+        carried_text = muted(strings.CARRIED_OVER, "caption")
+        carried_text.setWordWrap(True)
+        carried_layout.addWidget(carried_text)
+
+        self.carried_open_button = _button(strings.OPEN_DRAFT, "quiet")
+        self.carried_open_button.clicked.connect(self._open_carried)
+        carried_layout.addWidget(
+            self.carried_open_button,
+            0,
+            Qt.AlignmentFlag.AlignLeft,
+        )
+
+        self.body.addWidget(self.carried_card)
+        self.carried_card.hide()
 
         card, card_layout = panel(theme)
         head = QHBoxLayout()
@@ -96,6 +129,8 @@ class ThisWeekScreen(Page):
         self.body.addWidget(card)
 
         self.pick_chip.hide()
+        self.picked_label.hide()
+        self.why_button.hide()
         self.action_button.hide()
         self.caption.hide()
         self.edit_focus_button.hide()
@@ -123,6 +158,11 @@ class ThisWeekScreen(Page):
         self.focus_text.setText(v.focus if has_focus else strings.EMPTY_FOCUS)  # type: ignore[arg-type]
         self.focus_text.setProperty("muted", not has_focus)
         _repolish(self.focus_text)
+
+        picked_by_tea = has_focus and v.topic_origin == "auto_trending"
+        self.picked_label.setVisible(picked_by_tea)
+        self.why_button.setVisible(picked_by_tea)
+
         if has_focus:
             label = strings.EDIT_FOCUS
         else:
@@ -130,6 +170,15 @@ class ThisWeekScreen(Page):
         self.edit_focus_button.setText(label)
         self.edit_focus_button.setVisible(v.state != "no_focus")
         self.answered_label.setText(strings.ANSWERED.format(n=v.answered))
+
+        self._carried_blog_id = v.carried_blog_id
+        has_carried = v.carried_blog_id is not None and bool(v.carried_title)
+        self.carried_title.setText(v.carried_title or "")
+        self.carried_card.setVisible(has_carried)
+
+    def _open_carried(self) -> None:
+        if self._carried_blog_id is not None:
+            self.open_draft_requested.emit(self._carried_blog_id)
 
     def _on_action(self) -> None:
         v = self.view

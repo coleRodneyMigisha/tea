@@ -4,6 +4,7 @@ from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import pytest
+from handoff_world import imported
 
 from tea.clock import FakeClock
 from tea.db.repos import Repos
@@ -142,3 +143,66 @@ def test_answered_counts_this_weeks_answers(repos: Repos, clock: FakeClock) -> N
     qs.record_answer(repos, q, "login", "yes", week_start=WEEK)
     qs.record_answer(repos, q, "login", "", skipped=True, week_start=WEEK)
     assert view(repos, clock).answered == 1
+
+
+def test_picked_topic_exposes_stored_candidates(repos: Repos, clock: FakeClock) -> None:
+    clock.set(t(12, 9))
+    weekly.enter_pick_mode(repos, Settings(), WEEK)
+
+    clock.set(t(13, 18))
+    handoff = weekly.prepare_packet(
+        repos,
+        Settings(),
+        clock,
+        "weekly_pick",
+        WEEK,
+    )
+
+    import_reply(repos, handoff.id, sample_replies.WEEKLY_PICK)
+
+    view = week_view(repos, Settings(), clock.now())
+
+    assert view.topic_origin == "auto_trending"
+    assert view.focus == "Right-to-repair rules for phones"
+    assert view.trend_candidates == [
+        {
+            "n": 1,
+            "topic": "Right-to-repair rules for phones",
+            "angle": "What the new rules change for buyers",
+            "why": "Covered by two national outlets this week",
+            "urls": [
+                "https://example.org/a",
+                "https://example.org/b",
+            ],
+        },
+        {
+            "n": 2,
+            "topic": "Four-day week trials",
+            "angle": "What the trial data says",
+            "why": "Reported by two business papers",
+            "urls": ["https://example.org/c"],
+        },
+        {
+            "n": 3,
+            "topic": "Open data portals",
+            "angle": "Why reuse stays low",
+            "why": "",
+            "urls": [],
+        },
+    ]
+
+
+def test_carried_over_draft_is_exposed_in_week_view(
+    repos: Repos,
+    clock: FakeClock,
+) -> None:
+    clock.set(t(13, 18))
+    handoff = imported(repos, clock)
+
+    assert handoff.blog_id is not None
+    repos.blogs.update(handoff.blog_id, carried_weeks=1)
+
+    view = week_view(repos, Settings(), clock.now())
+
+    assert view.carried_blog_id == handoff.blog_id
+    assert view.carried_title == "Small teams need fewer documents, not better ones"

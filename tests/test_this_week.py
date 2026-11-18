@@ -10,7 +10,9 @@ from pytestqt.qtbot import QtBot
 
 from tea.clock import FakeClock
 from tea.db.repos import Repos
+from tea.devtools import sample_replies
 from tea.domain import weekly
+from tea.handoff.importer import import_reply
 from tea.settings import Settings
 from tea.ui import strings
 from tea.ui.screens.this_week import ThisWeekScreen
@@ -84,6 +86,105 @@ def test_pick_state_shows_chip(screen: ThisWeekScreen, repos: Repos, clock: Fake
     assert screen.pick_chip.isVisible() and screen.pick_chip.text() == strings.CHIP_PICK
     assert not screen.action_button.isVisible()
     assert screen.edit_focus_button.text() == strings.SET_OWN_TOPIC
+
+
+def test_picked_topic_shows_picked_by_tea_line(
+    screen: ThisWeekScreen, repos: Repos, clock: FakeClock
+) -> None:
+    settings = Settings()
+
+    clock.set(t(12, 9))
+    weekly.enter_pick_mode(repos, settings, WEEK)
+
+    clock.set(t(13, 18))
+    handoff = weekly.prepare_packet(
+        repos,
+        settings,
+        clock,
+        "weekly_pick",
+        WEEK,
+    )
+    import_reply(repos, handoff.id, sample_replies.WEEKLY_PICK)
+
+    show(screen, repos, clock)
+
+    assert screen.picked_label.isVisible()
+    assert screen.picked_label.text() == strings.AUTO_TOPIC
+
+
+def test_picked_topic_shows_why_button(
+    screen: ThisWeekScreen, repos: Repos, clock: FakeClock
+) -> None:
+    settings = Settings()
+
+    clock.set(t(12, 9))
+    weekly.enter_pick_mode(repos, settings, WEEK)
+
+    clock.set(t(13, 18))
+    handoff = weekly.prepare_packet(
+        repos,
+        settings,
+        clock,
+        "weekly_pick",
+        WEEK,
+    )
+    import_reply(repos, handoff.id, sample_replies.WEEKLY_PICK)
+
+    show(screen, repos, clock)
+
+    assert screen.why_button.isVisible()
+    assert screen.why_button.text() == strings.WHY
+
+
+def test_picked_topic_why_button_emits_request(
+    qtbot: QtBot,
+    screen: ThisWeekScreen,
+    repos: Repos,
+    clock: FakeClock,
+) -> None:
+    settings = Settings()
+
+    clock.set(t(12, 9))
+    weekly.enter_pick_mode(repos, settings, WEEK)
+
+    clock.set(t(13, 18))
+    handoff = weekly.prepare_packet(
+        repos,
+        settings,
+        clock,
+        "weekly_pick",
+        WEEK,
+    )
+    import_reply(repos, handoff.id, sample_replies.WEEKLY_PICK)
+
+    show(screen, repos, clock)
+
+    with qtbot.waitSignal(screen.why_requested, timeout=500):
+        screen.why_button.click()
+
+
+def test_owner_topic_hides_why_button(
+    screen: ThisWeekScreen,
+    repos: Repos,
+    clock: FakeClock,
+) -> None:
+    settings = Settings()
+
+    clock.set(t(9, 9))
+    weekly.save_focus(
+        repos,
+        settings,
+        clock,
+        WEEK,
+        "A topic I chose myself",
+    )
+
+    clock.set(t(11, 13, 30))
+    show(screen, repos, clock)
+
+    assert screen.focus_text.text() == "A topic I chose myself"
+    assert not screen.picked_label.isVisible()
+    assert not screen.why_button.isVisible()
 
 
 def test_prompt_ready_and_copied(screen: ThisWeekScreen, repos: Repos, clock: FakeClock) -> None:
@@ -227,6 +328,78 @@ def test_carried_line_when_a_draft_carries(
     repos.blogs.update(b.id, carried_weeks=1)
     f.show_focus_dialog(WEEK)
     assert f.dialog is not None and f.dialog.carried_line.isVisibleTo(f.dialog)
+
+
+def test_carried_over_card_opens_draft(
+    screen: ThisWeekScreen,
+    repos: Repos,
+    clock: FakeClock,
+) -> None:
+    settings = Settings()
+
+    clock.set(t(13, 18))
+    weekly.save_focus(
+        repos,
+        settings,
+        clock,
+        WEEK,
+        "This week's focus",
+    )
+
+    handoff = weekly.prepare_packet(
+        repos,
+        settings,
+        clock,
+        "weekly",
+        WEEK,
+    )
+
+    import_reply(repos, handoff.id, sample_replies.WEEKLY)
+
+    assert handoff.blog_id is not None
+    repos.blogs.update(handoff.blog_id, carried_weeks=1)
+
+    show(screen, repos, clock)
+
+    assert screen.carried_card.isVisible()
+    assert screen.carried_title.text() == "Small teams need fewer documents, not better ones"
+
+    opened: list[int] = []
+    screen.open_draft_requested.connect(opened.append)
+    screen.carried_open_button.click()
+
+    assert opened == [handoff.blog_id]
+
+
+def test_week_flow_opens_why_dialog_for_picked_topic(
+    flow: tuple[WeekFlow, FakeLogin],
+    repos: Repos,
+    clock: FakeClock,
+    screen: ThisWeekScreen,
+) -> None:
+    f, _ = flow
+    settings = Settings()
+
+    clock.set(t(12, 9))
+    weekly.enter_pick_mode(repos, settings, WEEK)
+
+    clock.set(t(13, 18))
+    handoff = weekly.prepare_packet(
+        repos,
+        settings,
+        clock,
+        "weekly_pick",
+        WEEK,
+    )
+    import_reply(repos, handoff.id, sample_replies.WEEKLY_PICK)
+
+    f.refresh()
+    screen.why_button.click()
+
+    assert f.why_dialog is not None
+    assert f.why_dialog.isVisible()
+    assert f.why_dialog.topic_label.text() == "Right-to-repair rules for phones"
+    assert len(f.why_dialog.candidate_cards) == 3
 
 
 def test_focus_is_kept_when_the_rebuild_fails(
