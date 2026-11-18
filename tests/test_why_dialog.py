@@ -1,6 +1,5 @@
 """Why dialog: show the stored topic candidates and their sources."""
 
-
 import pytest
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QDesktopServices
