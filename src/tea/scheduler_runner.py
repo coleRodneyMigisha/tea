@@ -8,6 +8,7 @@ at app start, every 60 seconds, and on resume from sleep (a wall-clock gap of mo
 
 import logging
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from typing import Protocol
 
@@ -16,6 +17,7 @@ from PySide6.QtDBus import QDBusConnection
 
 from tea.clock import Clock
 from tea.db.repos import Repos
+from tea.db.rows import Handoff
 from tea.domain import improve, weekly
 from tea.domain.weekly import elapsed
 from tea.logging_setup import log_event
@@ -36,6 +38,15 @@ from tea.settings import Settings
 
 TICK_MS = 60_000
 WAKE_GAP = timedelta(minutes=5)
+RETRY_FIRST = timedelta(minutes=5)  # a failing PreparePacket waits 5, 10, 20, 40, then 60 minutes
+RETRY_LONGEST = timedelta(minutes=60)
+TELL_OWNER_AFTER = 3  # failures in a row before the owner gets one notification
+
+
+@dataclass
+class _Failure:
+    count: int
+    retry_at: datetime
 
 
 class Hooks(Protocol):
@@ -54,6 +65,7 @@ class Notifications(Protocol):
     def focus_prompt(self, week: date) -> None: ...
     def pick_mode(self, week: date) -> None: ...
     def no_focus(self, week: date) -> None: ...
+    def prepare_failed(self, week: date) -> None: ...
 
 
 class Executor:
@@ -70,6 +82,7 @@ class Executor:
         self._settings = settings
         self.notifier = notifier
         self.hooks = hooks
+        self._failures: dict[tuple[str, date, int | None], _Failure] = {}
 
     def run(self, trigger: Trigger) -> list[Action]:
         settings = self._settings()
@@ -116,8 +129,9 @@ class Executor:
                 weekly.enter_pick_mode(repos, settings, week)
                 self.notifier.pick_mode(week)
             case PreparePacket(kind=kind, week=week, blog_id=blog_id):
-                made = weekly.prepare_packet(repos, settings, self.clock, kind, week, blog_id)
-                ready.append((made.id, made.kind, weekly.handoff_title(repos, made)))
+                made = self._prepare(kind, week, blog_id, settings)
+                if made is not None:
+                    ready.append((made.id, made.kind, weekly.handoff_title(repos, made)))
             case ShowLoginQuestions():
                 self.hooks.show_login_questions()
             case RemindHandoff(handoff_id=hid):
@@ -128,6 +142,29 @@ class Executor:
             case NotifyNoFocus(week=week):
                 weekly.note_no_focus(repos, week)
                 self.notifier.no_focus(week)
+
+    def _prepare(
+        self, kind: str, week: date, blog_id: int | None, settings: Settings
+    ) -> Handoff | None:
+        """Build a packet; after a failure wait longer each time, and tell the owner once."""
+        key = (kind, week, blog_id)
+        now = self.clock.now()
+        failure = self._failures.get(key)
+        if failure is not None and now < failure.retry_at:
+            return None
+        try:
+            made = weekly.prepare_packet(self.repos, settings, self.clock, kind, week, blog_id)
+        except Exception as exc:
+            count = failure.count + 1 if failure is not None else 1
+            wait = min(RETRY_FIRST * 2 ** (count - 1), RETRY_LONGEST)
+            self._failures[key] = _Failure(count, now + wait)
+            log_event("prepare_packet_failed", logging.WARNING, kind=kind,
+                      error=type(exc).__name__, attempts=count)  # fmt: skip
+            if count == TELL_OWNER_AFTER:
+                self.notifier.prepare_failed(week)
+            return None
+        self._failures.pop(key, None)
+        return made
 
 
 class Runs(Protocol):

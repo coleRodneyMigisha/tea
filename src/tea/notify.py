@@ -145,6 +145,10 @@ class Notifier(QObject):
         self._week_notice("nofocus", week, strings.NOTIFY_NO_FOCUS, strings.NOTIFY_NO_FOCUS_BODY,
                           strings.NOTIFY_SET_FOCUS)  # fmt: skip
 
+    def prepare_failed(self, week: date) -> None:
+        self._post(f"prepfail:{week.isoformat()}", "show", strings.NOTIFY_PREPARE_FAILED,
+                   strings.NOTIFY_PREPARE_FAILED_BODY, strings.NOTIFY_OPEN_TEA)  # fmt: skip
+
     def _week_notice(self, name: str, week: date, title: str, body: str, action: str) -> None:
         """Week notices all open the focus dialog for that week."""
         self._post(f"{name}:{week.isoformat()}", f"focus:{week.isoformat()}", title, body, action)
