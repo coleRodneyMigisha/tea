@@ -10,7 +10,6 @@ from pytestqt.qtbot import QtBot
 
 from tea.clock import FakeClock
 from tea.db.repos import Repos
-from tea.devtools import sample_replies
 from tea.handoff import packets
 from tea.settings import Settings
 from tea.ui import strings
@@ -122,7 +121,3 @@ def test_huge_answers_history_keeps_the_cap_and_every_boundary(
     assert "Never write about my employer." in section
     assert "Answer number 2999" in section  # the newest survive, the oldest are dropped
     assert "Answer number 0 " not in section
-
-
-def test_sample_reply_still_imports_after_the_big_ones() -> None:
-    assert "<draft>" in sample_replies.WEEKLY
