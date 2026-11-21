@@ -64,6 +64,12 @@ def _migrations(folder: Path) -> list[tuple[int, Path]]:
     return sorted(found)
 
 
+def latest_version(folder: Path = MIGRATIONS_DIR) -> int:
+    """The schema version a fully migrated database has."""
+    found = _migrations(folder)
+    return found[-1][0] if found else 0
+
+
 def migrate(conn: sqlite3.Connection, folder: Path = MIGRATIONS_DIR) -> list[int]:
     """Apply every migration newer than meta.schema_version, each in its own transaction.
 
