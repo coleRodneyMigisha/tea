@@ -29,6 +29,7 @@ packages = ["src/tea"]
 "data" = "tea/data"
 "prompts" = "tea/prompts"
 "assets" = "tea/assets"
+"desktop" = "tea/desktop"
 
 [tool.ruff]
 line-length = 100

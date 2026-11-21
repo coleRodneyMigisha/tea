@@ -45,6 +45,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         from tea.doctor import run_doctor
 
         return run_doctor()
+    if args.command == "install-autostart":
+        from tea.autostart import run_install
+
+        return run_install()
+    if args.command == "uninstall-autostart":
+        from tea.autostart import run_uninstall
+
+        return run_uninstall()
     if args.command is None:
         from tea.app import run_app
 

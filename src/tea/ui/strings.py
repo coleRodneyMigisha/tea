@@ -301,3 +301,6 @@ FINISH_OPEN_QUESTIONS = (
     "Finish or close the open questions first. Your form is kept, so you can start it after."
 )
 TRAY_RESUME = "Resume blog questions"
+
+# M10 text (settings, backup, autostart, doctor) lives in its own file to keep this one short.
+from tea.ui.strings_settings import *  # noqa: E402, F403
