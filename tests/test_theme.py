@@ -199,3 +199,49 @@ def test_button_variants_keep_a_focus_ring(tmp_path: Path) -> None:
     for variant in ("quiet", "primary", "danger"):
         rule = qss.split(f'QPushButton[variant="{variant}"]:focus', 1)[1].split("}", 1)[0]
         assert "border: 2px solid" in rule, variant
+
+
+# GNOME text scaling (UI_DESIGN 9, M10 note): Wayland Qt reports 96 dpi whatever the setting.
+
+
+@pytest.mark.parametrize(
+    ("dpi_scale", "factor", "expected"),
+    [
+        (1.0, 1.25, 1.25),  # Wayland: Qt did not see the setting, so apply it
+        (1.0, 1.0, 1.0),
+        (1.25, 1.25, 1.25),  # X11: Xft.dpi already carries it, so do not apply it twice
+        (2.0, 1.5, 2.0),
+        (1.0, 9.0, 3.0),  # a wild value is clamped
+        (1.0, 0.1, 0.5),
+    ],
+)
+def test_text_scaling_is_applied_once(dpi_scale: float, factor: float, expected: float) -> None:
+    assert theme_mod.effective_scale(dpi_scale, factor) == pytest.approx(expected)
+
+
+@pytest.mark.parametrize(
+    ("stdout", "code", "expected"),
+    [("1.25\n", 0, 1.25), ("1.0\n", 0, 1.0), ("", 1, 1.0), ("junk\n", 0, 1.0)],
+)
+def test_desktop_text_scaling_factor_is_read_from_gsettings(
+    monkeypatch: pytest.MonkeyPatch, stdout: str, code: int, expected: float
+) -> None:
+    import subprocess
+
+    from tea import desktop
+
+    fake = subprocess.CompletedProcess([], code, stdout, "")
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: fake)
+    assert desktop.text_scaling_factor() == expected
+
+
+def test_desktop_text_scaling_survives_a_missing_gsettings(monkeypatch: pytest.MonkeyPatch) -> None:
+    import subprocess
+
+    from tea import desktop
+
+    def boom(*_a: object, **_k: object) -> None:
+        raise FileNotFoundError
+
+    monkeypatch.setattr(subprocess, "run", boom)
+    assert desktop.text_scaling_factor() == 1.0

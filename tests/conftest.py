@@ -82,3 +82,4 @@ def no_desktop_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     from types import SimpleNamespace
 
     monkeypatch.setattr("tea.settings.desktop", SimpleNamespace(animations_disabled=lambda: False))
+    monkeypatch.setattr("tea.ui.theme.desktop", SimpleNamespace(text_scaling_factor=lambda: 1.0))

@@ -15,7 +15,7 @@ from typing import Any, Literal
 from PySide6.QtCore import QObject, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QFont, QFontDatabase, QFontInfo, QGuiApplication, QIcon, QPalette
 
-from tea import config
+from tea import config, desktop
 from tea.logging_setup import log_event
 
 Mode = Literal["light", "dark"]
@@ -55,6 +55,8 @@ _EXTRA_PX = {
     "reading_min": 280,
 }
 # Fractional line widths from UI_DESIGN, drawn with QPainter: the dropzone's dashed border.
+DPI_TOLERANCE = 0.02  # a dpi scale this close to 1 is "Qt saw no scaling"
+SCALE_MIN, SCALE_MAX = 0.5, 3.0
 _EXTRA_STROKE = {"dropzone_border": 1.5}
 # Type sizes UI_DESIGN names that the token type scale lacks: the ring's centre text.
 _EXTRA_TYPE_PX = {"ring_centre": 28}
@@ -241,9 +243,21 @@ def preferred_families() -> dict[str, str]:
     return {kind: tokens["font"][kind][0] for kind in ("ui", "reading", "mono")}
 
 
+def effective_scale(dpi_scale: float, text_factor: float) -> float:
+    """The size multiplier: the screen's dpi scale, plus GNOME's text scaling when Qt missed it.
+
+    Under Wayland Qt reports 96 dpi whatever the text-scaling setting; under X11 `Xft.dpi`
+    already carries it. A dpi scale of 1 therefore means the setting is not in it yet.
+    """
+    scale = dpi_scale * text_factor if abs(dpi_scale - 1) < DPI_TOLERANCE else dpi_scale
+    return min(max(scale, SCALE_MIN), SCALE_MAX)
+
+
 def screen_scale() -> float:
     screen = QGuiApplication.primaryScreen()
-    return screen.logicalDotsPerInch() / 96 if screen else 1.0
+    return effective_scale(
+        screen.logicalDotsPerInch() / 96 if screen else 1.0, desktop.text_scaling_factor()
+    )
 
 
 class Theme(QObject):
