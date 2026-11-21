@@ -41,6 +41,7 @@ QPushButton[variant="primary"]:disabled { background: {{bg}}; color: {{muted}}; 
 /* Inputs */
 QLineEdit, QPlainTextEdit, QTextEdit, QComboBox, QSpinBox, QTimeEdit {
   background: {{surface_raised}}; border: 1px solid {{line}}; border-radius: {{r_control}}px; padding: 8px 10px;
+  placeholder-text-color: {{muted}};
   selection-background-color: {{primary_soft}}; selection-color: {{ink}};
 }
 QLineEdit:focus, QPlainTextEdit:focus, QTextEdit:focus, QComboBox:focus, QSpinBox:focus, QTimeEdit:focus { border: 2px solid {{focus_ring}}; padding: 7px 9px; }
@@ -138,7 +139,7 @@ QProgressBar::chunk { background: {{primary}}; border-radius: 3px; }
 
 /* Hand-off dialog (UI_DESIGN 3.5) */
 QLabel#StepMarker { border: 1.5px solid {{line}}; border-radius: 12px; color: {{muted}}; font-weight: 600; font-size: {{px_caption}}px; background: transparent; }
-QLabel#StepMarker[done="true"] { border-color: {{primary}}; background: {{primary_soft}}; }
+QLabel#StepMarker[done="true"] { border-color: {{primary}}; background: {{primary_soft}}; color: {{ink}}; }
 QFrame#ImportNotes { background: {{surface}}; border: 1px solid {{line}}; border-left: 3px solid {{amber}}; border-radius: {{r_control}}px; }
 QLabel#Toast { background: {{ink}}; color: {{bg}}; border-radius: {{r_control}}px; padding: 8px 14px; font-weight: 500; }
 QLabel#Chip[state="version"] { background: transparent; color: {{ink}}; border-color: {{line}}; }

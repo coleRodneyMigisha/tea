@@ -15,7 +15,7 @@
       "primary_soft": "#DCE8CF",
       "attention": "#9C2F54",
       "attention_soft": "#F3DDE4",
-      "amber": "#B5701F",
+      "amber": "#915A18",
       "amber_soft": "#F4E6C8",
       "focus_ring": "#4F7A3A",
       "shadow": "rgba(27, 52, 38, 0.14)"
@@ -32,7 +32,7 @@
       "primary_ink": "#000000",
       "primary_soft": "#0B3238",
       "attention": "#F6188F",
-      "attention_soft": "#3A0A24",
+      "attention_soft": "#330920",
       "amber": "#F85A21",
       "amber_soft": "#3A1A0C",
       "focus_ring": "#19CDE6",
