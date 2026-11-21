@@ -56,5 +56,11 @@ def test_chip_grows_to_fit_the_icon(qtbot: QtBot, theme: Theme) -> None:
     assert chip.sizeHint().width() >= plain_width + theme.type_px("caption")
 
 
+# A thin icon stroke is mostly blended pixels; the darker amber (4.5:1) sits far from its pill.
+CLOSE = 120
+
+
 def _close(a: QColor, b: QColor) -> bool:
-    return abs(a.red() - b.red()) + abs(a.green() - b.green()) + abs(a.blue() - b.blue()) < 60
+    return (
+        abs(a.red() - b.red()) + abs(a.green() - b.green()) + abs(a.blue() - b.blue()) < CLOSE
+    )  # anti-aliased strokes blend toward the pill
