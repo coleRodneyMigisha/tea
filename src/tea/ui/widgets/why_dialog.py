@@ -2,8 +2,8 @@
 
 from typing import Any
 
-from PySide6.QtCore import Qt, QUrl
-from PySide6.QtGui import QDesktopServices
+from PySide6.QtCore import Qt, QTimer, QUrl
+from PySide6.QtGui import QDesktopServices, QShowEvent, QTextDocument
 from PySide6.QtWidgets import (
     QDialog,
     QHBoxLayout,
@@ -40,6 +40,7 @@ class WhyDialog(QDialog):
         super().__init__()
         self.setWindowTitle(strings.WHY_TITLE)
         self.setModal(False)
+        self._slack = theme.space(0)  # Qt scrolls by whole lines; a little room keeps the bar away
         self.setFixedWidth(theme.size("dialog_width"))
 
         self.candidate_cards: list[QPlainTextEdit] = []
@@ -106,6 +107,21 @@ class WhyDialog(QDialog):
         close_row.addStretch(1)
         close_row.addWidget(close_button)
         layout.addLayout(close_row)
+
+    def showEvent(self, event: QShowEvent) -> None:  # noqa: N802 (Qt override)
+        super().showEvent(event)
+        QTimer.singleShot(0, self._fit_cards)  # after the layout has given the cards their width
+
+    def _fit_cards(self) -> None:
+        """Make each box as tall as its wrapped text, so short text leaves no empty space."""
+        for card in self.candidate_cards:
+            measure = QTextDocument()  # a rich-text document reports its height in pixels
+            measure.setDefaultFont(card.font())
+            measure.setDocumentMargin(card.document().documentMargin())
+            measure.setTextWidth(card.viewport().width())
+            measure.setPlainText(card.toPlainText())
+            frame = card.height() - card.viewport().height()
+            card.setFixedHeight(round(measure.size().height()) + frame + self._slack)
 
     @staticmethod
     def _candidate_text(candidate: dict[str, Any]) -> str:

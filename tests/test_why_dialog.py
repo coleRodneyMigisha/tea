@@ -85,3 +85,15 @@ def test_source_links_open_in_the_browser(
     dialog.link_buttons[0].click()
 
     assert [url.toString() for url in opened] == ["https://example.org/a"]
+
+
+def test_candidate_boxes_fit_their_text(qtbot: QtBot, theme: Theme) -> None:
+    """A short candidate does not leave an empty box beneath its text (M9 review, M11)."""
+    dialog = make(qtbot, theme)
+    qtbot.wait(50)  # the boxes are fitted once the layout has given them their width
+    for card in dialog.candidate_cards:
+        spare = card.viewport().height() - card.fontMetrics().lineSpacing() * (
+            card.document().size().height()
+        )
+        assert spare < theme.space(6), f"{spare:.0f} px of empty space under the text"
+        assert card.verticalScrollBar().maximum() == 0  # and nothing is cut off
