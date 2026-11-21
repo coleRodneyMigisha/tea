@@ -66,3 +66,16 @@ def test_when_text_formats() -> None:
 def test_reading_minutes() -> None:
     assert ds.reading_minutes(1184) == 6
     assert ds.reading_minutes(10) == 1
+
+
+def test_unstarted_new_blog_form_is_not_listed(repos: Repos, clock: FakeClock) -> None:
+    """The New blog form owns a `scoping` blog with an empty topic (M8); no listing shows it."""
+    from tea.domain import manual
+
+    form = manual.form_blog(repos)
+    assert ds.groups(repos, clock.now()) == []
+    imported(repos, clock)
+    groups = ds.groups(repos, clock.now())
+    ids = [e.id for g in groups for e in g.entries if e.kind == ds.BLOG]
+    assert ids and form.id not in ids
+    assert all(e.title for g in groups for e in g.entries)
