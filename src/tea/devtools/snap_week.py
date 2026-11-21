@@ -167,12 +167,12 @@ def register_all(register: Callable[[str, str, Any], None], state: Callable[...,
         "paused": _week(2, 10, 0, None, pause_automation=True),
     }.items():
         register(week, name, state(week, build=build))
-        dialog = "focus_dialog"
-        register(dialog, "empty", state(dialog, build=_dialog()))
-        register(dialog, "typed", state(dialog, build=_dialog(FOCUS)))
-        register(dialog, "carried", state(dialog, build=_dialog(carried=True)))
-        register(dialog, "typed_focused", state(dialog, build=_dialog(FOCUS), keep_focus=True))
-        register(week, "no_focus_focused", state(week, build=_focused_set_focus, keep_focus=True))
-        register(week, "picked", state(week, build=_week(5, 10, 0, _picked)))
-        register(week, "carried", state(week, build=_week(7, 10, 0, _carried)))
-        register("why_dialog", "sample", state("why_dialog", build=_why))
+    dialog = "focus_dialog"
+    register(dialog, "empty", state(dialog, build=_dialog()))
+    register(dialog, "typed", state(dialog, build=_dialog(FOCUS)))
+    register(dialog, "carried", state(dialog, build=_dialog(carried=True)))
+    register(dialog, "typed_focused", state(dialog, build=_dialog(FOCUS), keep_focus=True))
+    register(week, "no_focus_focused", state(week, build=_focused_set_focus, keep_focus=True))
+    register(week, "picked", state(week, build=_week(5, 10, 0, _picked)))
+    register(week, "carried", state(week, build=_week(7, 10, 0, _carried)))
+    register("why_dialog", "sample", state("why_dialog", build=_why))
