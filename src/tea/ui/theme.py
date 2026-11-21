@@ -60,7 +60,11 @@ _EXTRA_STROKE = {"dropzone_border": 1.5}
 _EXTRA_TYPE_PX = {"ring_centre": 28}
 _RGBA = re.compile(r"rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)")
 # Icons referenced from the QSS template, and the color role each is drawn in.
-_QSS_ICON_ROLES = {"check-on-primary": "primary_ink"}
+_QSS_ICON_ROLES = {
+    "check-on-primary": "primary_ink",
+    "chevron-up": "muted",
+    "chevron-down": "muted",
+}
 _GENERIC_FAMILIES = {"serif", "sans-serif", "monospace"}
 _TOKEN = re.compile(r"\{\{\s*([a-z0-9_]+)\s*\}\}")
 _PX = re.compile(r"(\d+(?:\.\d+)?)px")

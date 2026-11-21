@@ -74,3 +74,11 @@ def no_leftover_popups() -> Iterator[None]:
                 widget.finished.disconnect()
             widget.close()
             widget.deleteLater()
+
+
+@pytest.fixture(autouse=True)
+def no_desktop_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tests never ask the owner's desktop (gsettings) what it prefers."""
+    from types import SimpleNamespace
+
+    monkeypatch.setattr("tea.settings.desktop", SimpleNamespace(animations_disabled=lambda: False))

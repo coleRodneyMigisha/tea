@@ -1,6 +1,7 @@
 """QApplication setup, wiring, tray and lifecycle."""
 
 import logging
+import shutil
 import sys
 from datetime import date
 
@@ -35,13 +36,21 @@ MSG_SHOW = "show"
 MSG_QUESTIONS = "login-questions"
 
 
-def _load_settings() -> Settings:
+SCHEDULE_FIELDS = set(
+    {"focus_day", "focus_time", "pick_enabled", "pick_day", "pick_time", "prompt_day"}
+    | {"prompt_time", "carry_over_weeks", "reminders_enabled", "questions_per_login"}
+    | {"dismiss_pause_minutes", "pause_automation"}
+)
+
+
+def _load_settings() -> tuple[Settings, str | None]:
+    """The settings, and the reason they are defaults when the file could not be read."""
     try:
-        return settings_mod.load()
+        return settings_mod.load(), None
     except SettingsError as exc:
-        # Keep the broken file for the owner to fix; run on defaults (Settings screen in M10).
+        # Keep the broken file; the Settings screen says so and the first save keeps a copy.
         log_event("settings_load_failed", logging.WARNING, error=type(exc).__name__)
-        return Settings()
+        return Settings(), str(exc)
 
 
 class TeaApp:
@@ -57,7 +66,7 @@ class TeaApp:
         self.app = app
         self.instance = instance
         self.clock: Clock = clock or SystemClock()
-        settings = _load_settings()
+        settings, self.settings_error = _load_settings()
         self.settings = settings
         self.conn = open_db(config.db_path())
         self.repos = Repos(self.conn, self.clock)
@@ -65,7 +74,11 @@ class TeaApp:
         load_fonts()
         self.theme = Theme(app, settings.appearance)
         self.theme.apply()
-        self.window = MainWindow(self.theme, settings, save_settings=self._save)
+        self.window = MainWindow(self.theme, settings, save_settings=self._save, clock=self.clock)
+        if self.settings_error:
+            self.window.settings_screen.set_notice(
+                strings.SETTINGS_LOAD_ERROR.format(detail=self.settings_error)
+            )
         self.login = LoginFlow(self.theme, self.repos, self.clock, lambda: self.settings)
         self.week = WeekFlow(
             self.theme, self.repos, self.clock, lambda: self.settings,
@@ -218,14 +231,35 @@ class TeaApp:
         self.app.setQuitOnLastWindowClosed(False)
 
     def _save(self, settings: Settings) -> None:
-        self.settings = settings
+        old, self.settings = self.settings, settings
+        screen = self.window.settings_screen
         try:
+            self._keep_broken_file()
             settings_mod.save(settings)
         except OSError as exc:
             log_event("settings_save_failed", logging.WARNING, error=type(exc).__name__)
+            screen.set_notice(strings.SETTINGS_SAVE_FAILED)
+        else:
+            if self.settings_error is not None:
+                self.settings_error = None
+                screen.set_notice(None)
         if self.tray is not None:
             self.tray.set_settings(settings)
+        if old.appearance != settings.appearance:
+            self.theme.set_appearance(settings.appearance)
+        self.window.week_screen.ring.reduce_motion = settings.reduce_motion
         self.week.refresh()
+        changed = old.model_dump(include=SCHEDULE_FIELDS) != settings.model_dump(
+            include=SCHEDULE_FIELDS
+        )
+        if changed:
+            self.runner.run_now()  # a new time may already be due
+
+    def _keep_broken_file(self) -> None:
+        """Before the first save over a settings file that could not be read, keep a copy."""
+        path = config.settings_path()
+        if self.settings_error is not None and path.is_file():
+            shutil.copyfile(path, path.with_name(path.name + ".broken"))
 
     def _on_message(self, message: str) -> None:
         known = message in (MSG_SHOW, MSG_QUESTIONS)
@@ -262,6 +296,7 @@ class TeaApp:
 
     def close(self) -> None:
         self.runner.stop()
+        self.window.settings_screen.flush()  # style notes typed in the last moment
         self.drafts.view.editor.flush()  # an edit typed in the last 2 seconds
         self.handoffs.close_all()
         self.conn.close()

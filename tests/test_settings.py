@@ -136,3 +136,40 @@ def test_broken_seed_file_rejected(monkeypatch: pytest.MonkeyPatch, tmp_path: Pa
     with pytest.raises(SettingsError) as err:
         load()
     assert "interests.json" in str(err.value)
+
+
+def test_first_run_reduce_motion_follows_the_desktop(monkeypatch: pytest.MonkeyPatch) -> None:
+    from types import SimpleNamespace
+
+    monkeypatch.setattr("tea.settings.desktop", SimpleNamespace(animations_disabled=lambda: True))
+    assert load().reduce_motion is True
+
+
+@pytest.mark.parametrize(
+    ("stdout", "code", "expected"),
+    [("false\n", 0, True), ("true\n", 0, False), ("", 1, False)],
+)
+def test_desktop_animation_setting_is_read_from_gsettings(
+    monkeypatch: pytest.MonkeyPatch, stdout: str, code: int, expected: bool
+) -> None:
+    import subprocess
+
+    from tea import desktop
+
+    fake = subprocess.CompletedProcess([], code, stdout, "")
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: fake)
+    assert desktop.animations_disabled() is expected
+
+
+def test_desktop_animation_setting_survives_a_missing_gsettings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import subprocess
+
+    from tea import desktop
+
+    def boom(*_a: object, **_k: object) -> None:
+        raise FileNotFoundError
+
+    monkeypatch.setattr(subprocess, "run", boom)
+    assert desktop.animations_disabled() is False

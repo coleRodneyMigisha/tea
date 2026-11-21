@@ -9,6 +9,7 @@ QLabel { background: transparent; }
 QLabel[role="muted"] { color: {{muted}}; }
 QLabel[role="caption"] { color: {{muted}}; font-size: {{px_caption}}px; }
 QLabel[role="strong"] { font-weight: 600; }
+QLabel[role="heading"] { font-size: {{px_title_s}}px; font-weight: 600; }
 QLabel[role="title"] { font-size: {{px_title_m}}px; font-weight: 600; }
 QLabel[role="display"] { font-family: {{font_reading}}; font-size: {{px_display}}px; font-weight: 500; }
 
@@ -161,3 +162,16 @@ QFrame#Banner QLabel { color: {{ink}}; }
 QScrollArea#FormScroll { background: transparent; border: none; }
 QPushButton[wide="true"] { padding: 8px 16px; }
 QPushButton[wide="true"]:focus { padding: 7px 15px; }
+
+/* Settings (M10): removable interest chips (a pill button with a trailing cross). */
+QPushButton[pill="true"] { padding: 4px 12px; border-radius: 999px; background: {{primary_soft}}; border: 1px solid {{primary_soft}}; font-size: {{px_caption}}px; font-weight: 600; }
+QPushButton[pill="true"]:hover { border-color: {{primary}}; }
+QPushButton[pill="true"]:focus { border: 2px solid {{focus_ring}}; padding: 3px 11px; }
+
+/* Settings (M10): spin box, time box and drop-down arrows. The chevrons are QSS-only icons (not in the
+   UI_DESIGN icon set), recolored to muted by the theme. */
+QSpinBox::up-button, QTimeEdit::up-button { subcontrol-origin: border; subcontrol-position: top right; width: 24px; border: none; border-left: 1px solid {{line}}; background: transparent; }
+QSpinBox::down-button, QTimeEdit::down-button { subcontrol-origin: border; subcontrol-position: bottom right; width: 24px; border: none; border-left: 1px solid {{line}}; background: transparent; }
+QSpinBox::up-button:hover, QSpinBox::down-button:hover, QTimeEdit::up-button:hover, QTimeEdit::down-button:hover { background: {{primary_soft}}; }
+QSpinBox::up-arrow, QTimeEdit::up-arrow { image: url(:/icons/chevron-up.svg); width: 12px; height: 12px; }
+QSpinBox::down-arrow, QTimeEdit::down-arrow, QComboBox::down-arrow { image: url(:/icons/chevron-down.svg); width: 12px; height: 12px; }

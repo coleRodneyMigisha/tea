@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from tea import config
+from tea.clock import Clock, SystemClock
 from tea.settings import Settings
 from tea.ui import strings
 from tea.ui.screens.drafts import DraftsScreen
@@ -43,6 +44,7 @@ class MainWindow(QMainWindow):
         settings: Settings,
         save_settings: Callable[[Settings], None],
         remember_geometry: bool = True,
+        clock: Clock | None = None,
     ) -> None:
         super().__init__()
         self.theme = theme
@@ -66,11 +68,13 @@ class MainWindow(QMainWindow):
         self.week_screen = ThisWeekScreen(theme, reduce_motion=settings.reduce_motion)
         self.drafts_screen = DraftsScreen(theme)
         self.new_blog_screen = NewBlogScreen(theme)
+        self.settings_screen = SettingsScreen(theme, settings, clock or SystemClock())
+        self.settings_screen.changed.connect(self._on_settings_screen)
         self.screens: dict[str, QWidget] = {
             "this_week": self.week_screen,
             "new_blog": self.new_blog_screen,
             "drafts": self.drafts_screen,
-            "settings": SettingsScreen(theme),
+            "settings": self.settings_screen,
         }
         for name in SCREEN_NAMES:
             self.stack.addWidget(self.screens[name])
@@ -155,12 +159,23 @@ class MainWindow(QMainWindow):
         self.footer.setAccessibleName(self.footer.text())
 
     def set_paused(self, paused: bool) -> None:
+        self.settings_screen.flush()  # notes typed a moment ago reach self.settings first
         if paused == self.settings.pause_automation:
             return
         self.settings = self.settings.model_copy(update={"pause_automation": paused})
         self._save_settings(self.settings)
         self._refresh_footer()
+        self.settings_screen.set_settings(self.settings)
         self.pause_changed.emit(paused)
+
+    def _on_settings_screen(self, new: object) -> None:
+        assert isinstance(new, Settings)
+        was_paused = self.settings.pause_automation
+        self.settings = new
+        self._save_settings(new)
+        self._refresh_footer()
+        if new.pause_automation != was_paused:
+            self.pause_changed.emit(new.pause_automation)
 
     # Screens and shortcuts
 

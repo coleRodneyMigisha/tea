@@ -9,10 +9,11 @@ import tempfile
 from datetime import time
 from pathlib import Path
 from typing import Annotated, Any, Literal
+from urllib.parse import urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, ValidationError, field_validator
 
-from tea import config
+from tea import config, desktop
 
 Weekday = Annotated[int, Field(ge=0, le=6, description="0 = Monday ... 6 = Sunday")]
 
@@ -67,6 +68,8 @@ class Settings(BaseModel):
     def _https_only(cls, value: str) -> str:
         if not value.startswith("https://"):
             raise ValueError("must start with https://")
+        if not urlparse(value).netloc or any(ch.isspace() for ch in value):
+            raise ValueError("must include a site name and no spaces")
         return value
 
     @field_validator("focus_time", "pick_time", "prompt_time")
@@ -91,7 +94,11 @@ def _seed() -> Settings:
         raise SettingsError(f"{path.name} could not be read: {exc}") from exc
     if not isinstance(seed, dict):
         raise SettingsError(f"{path.name} must hold a JSON object")
-    return Settings(interests=list(seed.get("interests", [])), region=seed.get("region", ""))
+    return Settings(
+        interests=list(seed.get("interests", [])),
+        region=seed.get("region", ""),
+        reduce_motion=desktop.animations_disabled(),  # UBUNTU_NOTES 7: the desktop's choice
+    )
 
 
 def load(path: Path | None = None) -> Settings:
