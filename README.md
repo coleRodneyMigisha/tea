@@ -62,7 +62,7 @@ What leaves your machine is what you paste into Claude and what you attach. Noth
 
 ## Settings
 
-Everything is under Settings and saves as you change it: the schedule, pick mode and your interests, questions per login, how long unused drafts are kept, the Claude chat link, your style notes, light or dark, **Pause all automation**, and **Run checks**, which shows the same report as `tea doctor`.
+Everything is under Settings and saves as you change it: the schedule, pick mode and your interests, questions per login (and, if you switch it on, a question session each time you unlock your screen), how long unused drafts are kept, the Claude chat link, your style notes, light or dark, **Pause all automation**, and **Run checks**, which shows the same report as `tea doctor`.
 
 ## Back up
 
