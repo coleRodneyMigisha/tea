@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
-from handoff_world import TITLE, imported, weekly_handoff
+from handoff_world import TITLE, imported, pick_handoff, weekly_handoff
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QDesktopServices, QGuiApplication
 from PySide6.QtWidgets import QApplication
@@ -330,3 +330,26 @@ def test_refresh_keeps_scroll_and_highlight(world: World, repos: Repos, clock: F
     assert v.reader.verticalScrollBar().value() == pos
     assert len(v.reader.extraSelections()) == highlighted
     assert v.drawer.claim_rows == drawer_rows
+
+
+def test_shelved_draft_shows_the_shelved_message(
+    world: World, repos: Repos, clock: FakeClock
+) -> None:
+    _ready(world, repos, clock)
+    v = world.view
+    assert v.status_note.isHidden()
+    v.shelve_action.trigger()
+    assert not v.status_note.isHidden() and v.status_note.text() == strings.SHELVED
+    v.revive_action.trigger()
+    assert v.status_note.isHidden()
+
+
+def test_auto_topic_draft_shows_the_note_unless_focus_answers_exist(
+    world: World, repos: Repos, clock: FakeClock
+) -> None:
+    h = pick_handoff(repos, clock)
+    import_reply(repos, h.id, sample_replies.WEEKLY_PICK)
+    blog_id = repos.handoffs.get(h.id).blog_id  # type: ignore[union-attr]
+    assert blog_id is not None and world.flow.select_blog(blog_id)
+    assert world.view.status_note.text() == strings.AUTO_TOPIC_NOTE
+    assert not world.view.status_note.isHidden()

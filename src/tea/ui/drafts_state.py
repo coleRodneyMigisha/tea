@@ -7,6 +7,7 @@ from tea.db.repos import Repos
 from tea.db.rows import Blog, Draft
 from tea.domain import weekly
 from tea.domain.drafts import current_text
+from tea.handoff import answers, packets
 from tea.ui import strings
 from tea.ui.week_state import short_clock
 
@@ -121,3 +122,13 @@ def groups(repos: Repos, now: datetime) -> list[Group]:
         if entries:
             out.append(Group(name, entries))
     return out
+
+
+def status_note(repos: Repos, blog: Blog) -> str:
+    """UI_DESIGN 8: the Shelved message, or the note on a topic tea picked; else empty."""
+    if blog.status == "shelved":
+        return strings.SHELVED
+    if blog.topic_origin == "auto_trending":
+        if not answers.has_focus_answers(repos, week=packets.week_of(repos, blog.id)):
+            return strings.AUTO_TOPIC_NOTE
+    return ""

@@ -61,6 +61,8 @@ class DraftView(QWidget):
         self._build_versions(outer)
         self.edited_note = muted(strings.EDITED_NOTE, "caption")
         outer.addWidget(self.edited_note)
+        self.status_note = muted("", "caption")
+        outer.addWidget(self.status_note)
         content = QHBoxLayout()
         content.setSpacing(theme.space(3))
         self.stack = QStackedWidget()
@@ -73,6 +75,7 @@ class DraftView(QWidget):
         content.addWidget(self.stack, 1)
         self.drawer = CheckDrawer(theme)
         self.drawer.claim_clicked.connect(self._find_claim)
+        self.drawer_button.toggled.connect(self.drawer.setVisible)
         content.addWidget(self.drawer)
         outer.addLayout(content, 1)
         self.toast = Toast(theme, self)
@@ -152,7 +155,6 @@ class DraftView(QWidget):
         tools.addStretch(1)
         self.drawer_button = button(strings.DRAWER_TOGGLE, "quiet")
         self.drawer_button.setCheckable(True)
-        self.drawer_button.toggled.connect(self._toggle_drawer)
         tools.addWidget(self.drawer_button)
         outer.addLayout(tools)
 
@@ -180,7 +182,7 @@ class DraftView(QWidget):
             self.stack.setCurrentWidget(self.reader)
             self.edit_button.setText(strings.EDIT)
             self.drawer_button.setChecked(found.copied_at is None)  # open for new drafts
-            self._toggle_drawer(self.drawer_button.isChecked())
+            self.drawer.setVisible(self.drawer_button.isChecked())
         self._show()
 
     def _show(self) -> None:
@@ -207,6 +209,8 @@ class DraftView(QWidget):
             self.drawer.set_draft(d, medium.warnings(body))
             self._rendered = key
         posted, shelved = blog.status == "posted", blog.status == "shelved"
+        self.status_note.setText(drafts_state.status_note(self.repos, blog))
+        self.status_note.setVisible(bool(self.status_note.text()))
         self.posted_action.setVisible(not posted)
         self.shelve_action.setVisible(not shelved and not posted)
         self.revive_action.setVisible(shelved)
@@ -313,9 +317,6 @@ class DraftView(QWidget):
         if self.editing():
             self.toggle_edit()
         self.reader.highlight(claim)
-
-    def _toggle_drawer(self, on: bool) -> None:
-        self.drawer.setVisible(on)
 
     def _regenerate(self) -> None:
         if self.blog_id is not None:
