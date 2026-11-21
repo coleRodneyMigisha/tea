@@ -183,3 +183,25 @@ def notice_due(repos: Repos) -> bool:
 
 def notice_shown(repos: Repos) -> None:
     repos.meta.set(NOTICE_KEY, "1")
+
+
+def sweep_orphans(repos: Repos) -> int:
+    """Remove empty `uploads/<id>` folders whose blog no longer exists. Never deletes a file.
+
+    Returns how many folders were removed. Run at app start, after `sweep_parts`.
+    """
+    root = config.uploads_dir()
+    if not root.is_dir():
+        return 0
+    removed = 0
+    for folder in root.iterdir():
+        if not (folder.is_dir() and folder.name.isdigit()):
+            continue
+        if repos.blogs.get(int(folder.name)) is not None:
+            continue
+        try:
+            folder.rmdir()  # fails, and is skipped, when anything is inside
+        except OSError:
+            continue
+        removed += 1
+    return removed

@@ -283,6 +283,7 @@ class TeaApp:
         pass shows the focus dialog and the login questions when they are due.
         """
         attachments.sweep_parts()  # copies cut off by a crash; none can be running yet
+        attachments.sweep_orphans(self.repos)  # empty folders of deleted blogs
         if not background:
             self.window.show()
         if ask_questions:

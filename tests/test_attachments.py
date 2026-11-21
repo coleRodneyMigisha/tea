@@ -246,3 +246,21 @@ def test_sweep_removes_stale_part_files(repos: Repos, tmp_path: Path) -> None:
 
 def test_sweep_without_uploads_folder() -> None:
     assert attachments.sweep_parts() == 0
+
+
+def test_sweep_removes_empty_folders_of_deleted_blogs_only(repos: Repos, tmp_path: Path) -> None:
+    kept = repos.blogs.create("Kept", "Kept", "manual")
+    src = tmp_path / "a.txt"
+    src.write_text("x")
+    attachments.add(repos, kept.id, src)
+    empty_orphan = config.uploads_dir() / "9999"
+    empty_orphan.mkdir(parents=True)
+    full_orphan = config.uploads_dir() / "9998"
+    full_orphan.mkdir()
+    (full_orphan / "precious.pdf").write_text("x")
+    other = config.uploads_dir() / "not-a-blog"
+    other.mkdir()
+    assert attachments.sweep_orphans(repos) == 1
+    assert not empty_orphan.exists()
+    assert full_orphan.exists() and other.exists()  # never deletes files, nor odd folders
+    assert attachments.blog_dir(kept.id).exists()

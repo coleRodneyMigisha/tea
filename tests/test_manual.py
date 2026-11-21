@@ -245,6 +245,7 @@ def test_discard_form_removes_row_and_files(repos: Repos, tmp_path: Path) -> Non
     manual.discard_form(repos, blog.id)
     assert repos.blogs.get(blog.id) is None
     assert not stored.exists()
+    assert not stored.parent.exists()  # no empty uploads/<blog_id> folder is left
     assert src.exists()  # the owner's original is never touched
 
 

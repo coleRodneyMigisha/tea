@@ -6,6 +6,7 @@ owner presses Start questions; only then does the blog count as in progress. Can
 deletes the row and tea's copies of its files.
 """
 
+import shutil
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 
@@ -127,3 +128,4 @@ def discard_form(repos: Repos, blog_id: int) -> None:
         for att in repos.attachments.list_for_blog(blog_id):
             attachments.remove(repos, att.id)
         repos.blogs.delete(blog_id)
+    shutil.rmtree(attachments.blog_dir(blog_id), ignore_errors=True)  # tea's own copies only
