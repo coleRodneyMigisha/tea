@@ -128,7 +128,7 @@ def status_note(repos: Repos, blog: Blog) -> str:
     """UI_DESIGN 8: the Shelved message, or the note on a topic tea picked; else empty."""
     if blog.status == "shelved":
         return strings.SHELVED
-    if blog.topic_origin == "auto_trending":
-        if not answers.has_focus_answers(repos, week=packets.week_of(repos, blog.id)):
-            return strings.AUTO_TOPIC_NOTE
+    picked = blog.topic_origin == "auto_trending"
+    if picked and not answers.has_focus_answers(repos, week=packets.week_of(repos, blog.id)):
+        return strings.AUTO_TOPIC_NOTE
     return ""

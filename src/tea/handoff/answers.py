@@ -88,13 +88,24 @@ def _words(text: str) -> int:
 
 def render(items: list[Item], max_words: int) -> str:
     """Group in CATEGORY_ORDER. Over the cap, drop the oldest non-boundaries answers first."""
-    kept = list(items)
     droppable = sorted(
-        (i for i in kept if i.category != "boundaries"), key=lambda i: (i.answered_at, i.answer.id)
+        (i for i in items if i.category != "boundaries"), key=lambda i: (i.answered_at, i.answer.id)
     )
-    while droppable and _words(_format(kept)) > max_words:
-        kept.remove(droppable.pop(0))
-    return _format(kept)
+
+    def without_oldest(count: int) -> list[Item]:
+        gone = {id(i) for i in droppable[:count]}
+        return [i for i in items if id(i) not in gone]
+
+    # Fewest drops that fit the cap. Words only fall as more are dropped, so bisect: a long
+    # history must not be re-rendered once per dropped answer.
+    low, high = 0, len(droppable)
+    while low < high:
+        mid = (low + high) // 2
+        if _words(_format(without_oldest(mid))) > max_words:
+            low = mid + 1
+        else:
+            high = mid
+    return _format(without_oldest(low))
 
 
 def _format(items: list[Item]) -> str:

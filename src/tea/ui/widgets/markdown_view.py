@@ -29,6 +29,8 @@ def apply_reading_format(theme: Theme, document: QTextDocument) -> None:
     """
     line = round(theme.line_height("reading") * PERCENT)
     gap = theme.space(3)
+    edit = QTextCursor(document)
+    edit.beginEditBlock()  # one undo step and one relayout, not one per block
     block = document.begin()
     while block.isValid():
         cursor = QTextCursor(block)
@@ -49,6 +51,7 @@ def apply_reading_format(theme: Theme, document: QTextDocument) -> None:
         fmt.setBottomMargin(gap)
         cursor.setBlockFormat(fmt)
         block = block.next()
+    edit.endEditBlock()
 
 
 def markdown_html(markdown: str) -> str:

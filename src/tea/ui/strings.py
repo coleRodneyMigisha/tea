@@ -69,6 +69,7 @@ CLAUDE_NO_SEARCH = (
 NO_QUESTIONS_LEFT = (
     "You've answered every question for now. New ones arrive with next week's focus."
 )
+CLAIMS_CAPPED = "Showing the {shown} most serious of {total} claims. Check the rest in the draft."
 AUTO_TOPIC = "Picked by tea because you hadn't set a focus."
 WHY = "Why?"
 WHY_TITLE = "Why this topic?"

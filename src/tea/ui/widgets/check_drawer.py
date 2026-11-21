@@ -26,6 +26,7 @@ from tea.ui.theme import Theme
 VERDICT_ICONS = {"supported": "check", "weak": "weak", "unsupported": "cross"}
 VERDICT_ROLES = {"supported": "primary", "weak": "amber", "unsupported": "attention"}
 VERDICT_ORDER = ("unsupported", "weak", "supported")
+MAX_CLAIM_ROWS = 200  # a row is a widget; 2,000 of them take seconds to build
 
 
 class WrapCheck(QWidget):
@@ -221,6 +222,8 @@ class CheckDrawer(QScrollArea):
         lines = []
         for status in VERDICT_ORDER:
             for c in claims:
+                if len(self.claim_rows) >= MAX_CLAIM_ROWS:
+                    break
                 if c.get("status", "weak") == status or (
                     status == "weak" and c.get("status") not in VERDICT_ICONS
                 ):
@@ -229,6 +232,10 @@ class CheckDrawer(QScrollArea):
                     col.addWidget(row)
                     self.claim_rows.append(row)
                     lines.append(f"{status}: {row.claim}")
+        if len(claims) > len(self.claim_rows):
+            note = strings.CLAIMS_CAPPED.format(shown=len(self.claim_rows), total=len(claims))
+            col.addWidget(muted(note, "caption"))
+            lines.append(note)
         self.sections[strings.DRAWER_CLAIMS] = lines
 
     def _sources(self, sources: list[dict[str, str]]) -> None:
