@@ -65,6 +65,16 @@ class LoginFlow(QObject):
             return False
         return self._open(settings.questions_per_login, login=True)
 
+    def on_unlock(self) -> bool:
+        """The screen unlocked (optional setting): a login session under the same rules."""
+        settings = self._settings()
+        if not settings.questions_on_unlock or settings.pause_automation or self.popup is not None:
+            return False
+        if settings.questions_per_login <= 0 or not qs.login_allowed(self.repos, self.clock.now()):
+            log_event("login_questions_skipped", kind="unlock")
+            return False
+        return self._open(settings.questions_per_login, login=True)
+
     def ask_now(self) -> bool:
         """The owner asked for questions: no cooldown, takes focus, no auto-close."""
         if self.popup is not None:

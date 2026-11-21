@@ -31,6 +31,7 @@ from tea.ui.theme import Theme, load_fonts
 from tea.ui.tray import Tray
 from tea.ui.week_flow import WeekFlow
 from tea.ui.widgets.answers_preview import AnswersPreview, preview_text
+from tea.unlock import UnlockWatcher
 
 MSG_SHOW = "show"
 MSG_QUESTIONS = "login-questions"
@@ -84,6 +85,9 @@ class TeaApp:
             self.theme, self.repos, self.clock, lambda: self.settings,
             self.window.week_screen, self.login,
         )  # fmt: skip
+        self.unlock = UnlockWatcher(parent=self.window)  # listens only while the setting is on
+        self.unlock.unlocked.connect(self._on_unlock)
+        self.unlock.set_enabled(settings.questions_on_unlock)
         self.handoffs = HandoffFlow(
             self.theme, self.repos, self.clock, lambda: self.settings, parent=self.window
         )
@@ -245,6 +249,7 @@ class TeaApp:
                 screen.set_notice(None)
         if self.tray is not None:
             self.tray.set_settings(settings)
+        self.unlock.set_enabled(settings.questions_on_unlock)
         if old.appearance != settings.appearance:
             self.theme.set_appearance(settings.appearance)
         self.window.week_screen.ring.reduce_motion = settings.reduce_motion
@@ -254,6 +259,10 @@ class TeaApp:
         )
         if changed:
             self.runner.run_now()  # a new time may already be due
+
+    def _on_unlock(self) -> None:
+        if not self.week.focus_dialog_open():  # login questions wait behind the focus dialog
+            self.login.on_unlock()
 
     def _keep_broken_file(self) -> None:
         """Before the first save over a settings file that could not be read, keep a copy."""
@@ -297,6 +306,7 @@ class TeaApp:
 
     def close(self) -> None:
         self.runner.stop()
+        self.unlock.set_enabled(False)
         self.window.settings_screen.flush()  # style notes typed in the last moment
         self.drafts.view.editor.flush()  # an edit typed in the last 2 seconds
         self.handoffs.close_all()

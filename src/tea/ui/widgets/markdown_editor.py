@@ -8,6 +8,7 @@ from PySide6.QtCore import QTimer, Signal
 from PySide6.QtGui import QResizeEvent, QTextBlockFormat, QTextCursor
 from PySide6.QtWidgets import QTextEdit
 
+from tea.ui import strings
 from tea.ui.theme import Theme
 
 AUTOSAVE_MS = 2000
@@ -22,6 +23,7 @@ class MarkdownEditor(QTextEdit):
         self.theme = theme
         self.setProperty("reading", "true")
         self.setAcceptRichText(False)
+        self.setAccessibleName(strings.EDITOR_ACCESSIBLE)
         self.timer = QTimer(self)
         self.timer.setSingleShot(True)
         self.timer.setInterval(AUTOSAVE_MS)

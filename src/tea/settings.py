@@ -41,6 +41,7 @@ class Settings(BaseModel):
     # Questions
     questions_per_login: Annotated[int, Field(ge=0, le=5)] = 3
     dismiss_pause_minutes: Annotated[int, Field(ge=0, le=24 * 60)] = 120
+    questions_on_unlock: StrictBool = False  # M11: also ask when the screen unlocks
 
     # Carry-over (D3)
     carry_over_weeks: Annotated[int, Field(ge=0, le=3)] = 1

@@ -227,6 +227,8 @@ class SettingsScreen(Page):
         )
         self._row(grid, strings.SETTINGS_PER_LOGIN, self.per_login)
         self._row(grid, strings.SETTINGS_PAUSE_AFTER, self.dismiss_pause)
+        self.on_unlock = self._switch(strings.SETTINGS_ON_UNLOCK, "questions_on_unlock")
+        self._span(grid, self.on_unlock)
 
     def _carry(self) -> None:
         _box, grid = self._section("carry")
@@ -357,6 +359,7 @@ class SettingsScreen(Page):
             self.dismiss_pause.setValue(s.dismiss_pause_minutes)
             self.carry_weeks.setValue(s.carry_over_weeks)
             self.reminders.setChecked(s.reminders_enabled)
+            self.on_unlock.setChecked(s.questions_on_unlock)
             self.claude_url.setText(s.claude_url)
             self.claude_url_error.hide()
             self.include_notes.setChecked(s.include_style_notes)

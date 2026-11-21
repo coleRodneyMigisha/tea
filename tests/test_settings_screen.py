@@ -71,6 +71,7 @@ def test_controls_show_the_defaults(screen: SettingsScreen) -> None:
     assert screen.region.text() == ""
     assert screen.per_login.value() == 3
     assert screen.dismiss_pause.value() == 120
+    assert not screen.on_unlock.isChecked()  # off by default
     assert screen.carry_weeks.value() == 1
     assert screen.reminders.isChecked()
     assert screen.claude_url.text() == "https://claude.ai/new"
@@ -119,6 +120,7 @@ def _set_combo(box: QComboBox, data: object) -> None:
         ("dismiss_pause_minutes", lambda s: s.dismiss_pause.setValue(30), 30),
         ("carry_over_weeks", lambda s: s.carry_weeks.setValue(3), 3),
         ("reminders_enabled", lambda s: s.reminders.setChecked(False), False),
+        ("questions_on_unlock", lambda s: s.on_unlock.setChecked(True), True),
         ("include_style_notes", lambda s: s.include_notes.setChecked(False), False),
         ("max_answer_words", lambda s: s.max_words.setValue(900), 900),
         ("default_length", lambda s: _set_combo(s.length, "long"), "long"),

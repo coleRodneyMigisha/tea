@@ -247,6 +247,7 @@ DELETE_LAST_BODY = (
     "{title} has no other versions, so it moves to Shelved with nothing to show."
     " This can't be undone."
 )
+EDITOR_ACCESSIBLE = "Draft text"
 EDITED_NOTE = "Edited. The imported draft is kept."
 EDITED_MARKER = "Edited"
 VERSION_LABEL = "Version {n}"

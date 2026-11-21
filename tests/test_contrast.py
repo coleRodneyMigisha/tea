@@ -82,3 +82,11 @@ def test_placeholder_text_is_the_muted_colour(
     painted = _extreme_pixel(box, background)
     assert painted == theme.color("muted")
     assert ratio(painted.name(), background.name()) >= 4.5
+
+
+@pytest.mark.parametrize("mode", ["light", "dark"])
+@pytest.mark.parametrize("surface", ["bg", "surface", "surface_raised"])
+def test_focus_ring_reaches_3_to_1(mode: str, surface: str) -> None:
+    """WCAG 1.4.11: the visible focus ring against what it is drawn on."""
+    colors = COLORS[mode]
+    assert ratio(colors["focus_ring"], colors[surface]) >= 3.0

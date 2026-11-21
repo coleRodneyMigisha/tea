@@ -14,6 +14,7 @@ def test_defaults() -> None:
     assert (s.pick_enabled, s.pick_day, s.pick_time) == (True, 3, time(9, 0))
     assert (s.prompt_day, s.prompt_time) == (4, time(18, 0))
     assert s.questions_per_login == 3
+    assert s.questions_on_unlock is False
     assert s.dismiss_pause_minutes == 120
     assert s.carry_over_weeks == 1
     assert s.reminders_enabled is True
