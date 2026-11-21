@@ -126,6 +126,23 @@ def _ready(copied: bool = False, versions: bool = False) -> Callable[[Repos, Clo
     return setup
 
 
+def _shelved(repos: Repos, clock: Clock) -> int | None:
+    from tea.domain import drafts
+
+    blog_id = _ready(copied=False)(repos, clock)
+    assert blog_id is not None
+    drafts.shelve(repos, blog_id)
+    return blog_id
+
+
+def _picked(repos: Repos, clock: Clock) -> int | None:
+    from tea.devtools import sample_replies
+    from tea.handoff.importer import import_reply
+
+    hid = _handoff(repos, clock, "weekly_pick")
+    return import_reply(repos, hid, sample_replies.WEEKLY_PICK).draft.blog_id
+
+
 def _waiting(repos: Repos, clock: Clock) -> int | None:
     _handoff(repos, clock)  # the only entry, so the list selects it
     return None
@@ -153,4 +170,6 @@ def register_all(register: Callable[[str, str, Any], None], state: Callable[...,
     register(s, "drawer_open", state(s, build=_drafts(_ready())))
     register(s, "editing", state(s, build=_drafts(_ready(copied=True), "edit")))
     register(s, "versions", state(s, build=_drafts(_ready(copied=True, versions=True))))
+    register(s, "shelved", state(s, build=_drafts(_shelved)))
+    register(s, "picked", state(s, build=_drafts(_picked)))
     register(s, "waiting", state(s, build=_drafts(_waiting)))
