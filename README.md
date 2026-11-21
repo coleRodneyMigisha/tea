@@ -1,85 +1,113 @@
-# tea build pack (for Claude Code)
+# tea
 
-This folder is everything Claude Code needs to build **tea**, a local Ubuntu desktop app that prepares blog posts for Medium.
+tea is a small Ubuntu desktop app that prepares your weekly blog post for Medium. It asks you a few short questions over the week to learn how you write. On Friday at 18:00 it has a complete prompt waiting. You paste the prompt into a normal Claude chat, paste Claude's reply back into tea, and tea turns it into a checked draft with a **Copy for Medium** button. You paste the draft into Medium yourself.
 
-**How tea works.** tea asks you short questions over the week. On Friday at 18:00 it has a complete, ready-to-paste **prompt** waiting. You copy it into a normal Claude chat (attaching any files yourself), paste Claude's reply back into tea, and tea turns it into a checked draft with a "Copy for Medium" button. You paste that into Medium yourself.
+tea has no API key, no paid API and no network code. It never posts anywhere. The only thing it opens is your Claude chat link, and only when you click **Open Claude**.
 
-**No API key, no paid API, no network code.** The writing happens in your own Claude chat. tea only prepares the prompt and reads the reply you paste back.
+## Install
 
-## Set up (5 minutes)
+You need Ubuntu 24.04 or newer with Python 3.12 or newer.
 
-1. Put the pack in your repo. From a normal terminal, not inside Claude Code:
+```bash
+sudo apt install pipx libxcb-cursor0 libnotify-bin
+pipx ensurepath
+cd ~/Code/tea
+pipx install .
+```
 
-   ```bash
-   cd ~/Code/tea
-   unzip -o ~/Downloads/tea-build-pack.zip
-   git add -A && git commit -m "Add build pack" && git push
-   ```
+Open a new terminal so `tea` is on your PATH, then start it:
 
-2. Install the system packages the app needs (reasons in `docs/UBUNTU_NOTES.md`):
+```bash
+tea
+```
 
-   ```bash
-   sudo apt install python3.12-venv libxcb-cursor0 libnotify-bin
-   ```
+Update later with `pipx install --force .` from the repo.
 
-3. **Restart Claude Code** in `~/Code/tea` (exit, then run `claude` again) so it loads `CLAUDE.md`, the slash commands in `.claude/commands/` and the review agents in `.claude/agents/`. Do not run `/init`; `CLAUDE.md` already exists.
+### Start at login
 
-4. Check `.claude/settings.json`. It pre-approves safe commands (`make`, `pytest`, `ruff`, `git add` and `commit`) and blocks `git push`, `sudo`, `rm -rf` and reading `.env` files. Adjust it if you want something different.
+```bash
+tea install-autostart
+```
 
-## How to build it
+This writes three things, all under your home folder:
 
-The build is 12 milestones, M0 to M11, listed in `plan/README.md`. Per milestone:
+- `~/.config/autostart/tea-autostart.desktop`, which starts `tea --background` eight seconds after you log in, hidden in the tray.
+- `~/.local/share/applications/tea.desktop`, so tea appears in the app launcher.
+- The tea icons in `~/.local/share/icons/hicolor/scalable/apps/`.
 
-1. `/clear` (fresh context).
-2. `/milestone M0` (then M1, M2, and so on, in order).
-3. Claude reads its plan, then gives you a short plan and **waits**. Read it, answer any questions it asks, and say go.
-4. Claude writes tests first, builds, runs `make test` and `make lint`, checks every acceptance criterion with evidence, updates `PROGRESS.md`, commits, and runs `/review`.
-5. Try the result yourself with `make run`, and read the summary. If something is wrong, tell Claude and point at the doc section it missed.
-6. `git push` yourself when you are happy.
+`tea uninstall-autostart` removes exactly those files, and any folder it leaves empty.
 
-### Getting the best results
+If you do not see a tray icon, your desktop may lack the AppIndicator extension. tea still works: open it from the launcher, and a second launch brings the running window forward. `tea doctor` tells you what is missing.
 
-- **One milestone per session.** A clean context beats a long one. `PROGRESS.md` and the plan files carry the state between sessions.
-- **Use your most capable model for M2, M5 and M7** (the hand-off core, the scheduler and the hand-off dialog). Switch with `/model`. Lighter milestones are fine on a faster model.
-- **Use plan mode** (Shift+Tab to cycle to it) for M2, M5, M7 and M9 so Claude cannot edit before you approve the plan.
-- **UI work is checked visually.** From M3 on, Claude renders screenshots with `python -m tea.devtools.snap` and compares them to `docs/UI_DESIGN.md`. If a screen looks off to you, run the snapshot command, drag the PNG into the chat, and say what is wrong.
-- **Conflicts and gaps** go to `docs/DEVIATIONS.md` via `/deviation`. Read that file after each milestone.
-- **Do not let it skip ahead.** `/milestone` refuses to start if the previous milestone is not marked done.
-- **Test with real writing early.** After M7, build a prompt with `tea packet`, paste it into Claude, paste the reply back, and judge the draft against `docs/WRITING_STANDARD.md`. The prompts in `prompts/` are where most of the quality comes from; tune them and bump their `version`.
+## The weekly routine
 
-## Your weekly routine once it is built
+1. **Monday.** tea asks for the week's focus. Type the topic you want to write about. If you skip it, tea tells Claude on Thursday to pick a trending topic near your interests.
+2. **During the week.** A small popup asks up to three questions when you log in. Answer, skip or close it. **Answer a few questions** on This week opens it any time, and **What Claude will be told** shows exactly what your answers become.
+3. **Friday 18:00.** A notification says the prompt is ready, also if the machine was off at 18:00. If you have not pasted a reply, tea reminds you at later logins.
+4. **Write the draft** (see the next section).
+5. **Edit, copy, post.** Open the draft in Drafts, edit it, press **Copy for Medium**, paste into Medium, then press **Mark as posted**.
+6. **If you skip a draft.** tea keeps an unused draft for a week (change this in Settings) and prepares an improvement prompt that includes your edits and your new answers. **Shelve** keeps a draft without prompts. **Revive** brings it back. tea never deletes a draft by itself.
 
-1. Monday: tell tea the week's focus. If you don't, on Thursday tea decides Claude should pick a trending topic.
-2. Through the week: answer the small question popups when you log in.
-3. Friday 18:00: a notification says the prompt is ready. Open the hand-off dialog, click **Copy prompt**, click **Open Claude**, attach any files it lists, turn on web search if you want research, paste the prompt, then copy Claude's reply and click **Import draft** in tea.
-4. Edit the draft, use **Copy for Medium**, paste into Medium, then **Mark as posted**. If you skip a draft, tea keeps it for a week and improves it.
+**New blog** prepares a prompt for any topic on demand: a short form, optional files, a few questions, then the same hand-off.
 
-## What is in here
+## How a hand-off works
 
-| Path | What it is |
+A hand-off is the trip from tea to Claude and back. The dialog has three steps:
+
+1. **Copy the prompt.** It goes to your clipboard as plain text. If the dialog lists files, attach them in Claude yourself. tea only stores a copy and lists it; it never reads or uploads your files.
+2. **Open Claude.** This opens your Claude chat link in the browser. Turn on web search in Claude if you want it to research.
+3. **Paste Claude's reply** and press **Import draft**. tea reads the reply, builds a draft and a list of claims to check, and tells you plainly if something looked wrong. A reply it could not read is kept and explained, and you can retry.
+
+What leaves your machine is what you paste into Claude and what you attach. Nothing else.
+
+## Settings
+
+Everything is under Settings and saves as you change it: the schedule, pick mode and your interests, questions per login, how long unused drafts are kept, the Claude chat link, your style notes, light or dark, **Pause all automation**, and **Run checks**, which shows the same report as `tea doctor`.
+
+## Back up
+
+Settings, then Data, then **Export backup** writes a zip of the database and every stored upload. It is safe to run while tea is open.
+
+To restore on a fresh machine, install tea, make sure it is not running, and unzip the backup into the data folder:
+
+```bash
+mkdir -p ~/.local/share/tea
+unzip ~/tea-backup-2026-11-21.zip -d ~/.local/share/tea
+```
+
+Start tea; your blogs, answers, drafts and files are back. Do not unzip over a data folder you want to keep. Settings live in `~/.config/tea/settings.json`, which is small and easy to copy by hand.
+
+Where things live:
+
+| What | Where |
 |---|---|
-| `CLAUDE.md` | Standing instructions Claude Code loads every session. Short on purpose. |
-| `PROGRESS.md` | Milestone status. Claude updates it. |
-| `plan/` | One file per milestone: what to read, build, test first, and the acceptance criteria. |
-| `.claude/` | Slash commands (`/milestone`, `/review`, `/deviation`), two review subagents, permissions. |
-| `docs/DECISIONS.md` | Your final decisions. They override everything else. |
-| `docs/SPEC.md` | What the app does, workflow by workflow. |
-| `docs/ARCHITECTURE.md` | Process model, modules, scheduler, hand-off layer. |
-| `docs/DATA_MODEL.sql` | SQLite schema (migration 001). |
-| `docs/PASTE_FORMAT.md` | The reply format Claude is asked to use and how tea parses it. |
-| `docs/UI_DESIGN.md` | Visual identity, tokens, layouts, microcopy. |
-| `docs/WRITING_STANDARD.md` | How the blogs must be written, and the sources behind it. |
-| `docs/MEDIUM_NOTES.md` | Medium's formatting limits and AI-content policy. |
-| `docs/TESTING.md`, `docs/UBUNTU_NOTES.md` | Test plan (including 22 scheduler scenarios) and Ubuntu specifics. |
-| `prompts/` | The prompt templates tea fills in and puts on your clipboard. |
-| `assets/` | Design tokens, QSS theme template, icons. |
-| `data/` | Seed questions, question templates, starter interests. |
-| `desktop/` | Launcher and autostart templates. |
+| Database and uploads | `~/.local/share/tea/` |
+| Settings | `~/.config/tea/settings.json` |
+| Log (event names only, never your writing) | `~/.local/state/tea/tea.log` |
+
+## If something is wrong
+
+```bash
+tea doctor
+```
+
+It checks the tray, the notification service, fonts, the database, your settings, the prompt files and theme, and how much space tea uses. Each line starts with OK, WARN or FAIL, and says what to do.
+
+Two commands help when you want to work without the window: `tea packet` prints the prompt to the terminal and `tea import-reply FILE` imports a reply saved in a file.
 
 ## Things to know
 
-- **Medium has an AI-content policy.** Read `docs/MEDIUM_NOTES.md`. tea gives you drafts to edit and a disclosure line on copy.
-- **What you paste and attach goes to Claude.** tea itself sends nothing anywhere.
-- **Claude's chat has its own limits** (message length, file sizes and counts, web search availability, usage allowance) depending on your plan. tea shows the prompt's word count; if a prompt is too long for your chat, lower the "maximum answers in a prompt" setting.
-- **"Trending" means** recent coverage by at least two independent reputable publishers within 10 days, found by Claude's web search in your chat. It is not social-media analytics, and it needs web search to be on in Claude.
-- **Starter interests** are in `data/interests.json`. Edit them before you build, or later in Settings.
+- Medium has an AI-content policy. Read `docs/MEDIUM_NOTES.md` before you post.
+- Claude's chat has its own limits (message length, file sizes, web search, your plan's allowance). tea shows the prompt's word count. If a prompt is too long for your chat, lower **Maximum answers in a prompt** in Settings.
+- "Trending" means recent coverage by at least two independent reputable publishers, found by Claude's web search in your chat. It is not social-media analytics.
+
+## Developing
+
+```bash
+make setup   # venv and dev install
+make run     # python -m tea
+make test    # offscreen Qt tests
+make lint    # ruff and mypy
+```
+
+Read `CLAUDE.md` for the rules, `PROGRESS.md` for what is built, and `docs/` for the design. Screens are rendered to PNG for review with `python -m tea.devtools.snap`.
